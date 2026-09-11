@@ -1,78 +1,123 @@
-# SupportBridge — September 11–24, 2026 Development Proposal
+# BridgeLayer — September 11 Phase Development Backlog
 
-This plan accompanies [PROJECT_SCOPE.md](PROJECT_SCOPE.md). It prioritizes the next one to two weeks of the independent professional development phase. Estimates are focused development time, not delivery promises. Proposed work is not implemented or automatically approved by inclusion here.
+This backlog implements the planning structure approved for the phase beginning September 11, 2026. The initial sequencing window is September 11–24; dates are planning targets, not promises or records of daily work. [PROJECT_SCOPE.md](PROJECT_SCOPE.md) defines the bounded phase; [PROJECT_PLAN.md](PROJECT_PLAN.md) holds later workstreams.
 
-## Inspection findings
+Documentation reconciliation is implemented. All engineering items below remain planned; approval of this backlog does not imply their code exists or settle material architecture decisions. Security acceptance tests accompany gateway development even though they appear under P2.
 
-The working baseline is one TypeScript MCP server with two tools over stdio, a SQLite store, a scripted SDK client, six tests, and JSON stderr logs. No actual client engagement, live external API integration, LLM call, autonomous agent workflow, HTTP listener, or deployed service was evidenced. Tasks 2–4 and the React console appear in the existing roadmap only.
+## Inspection findings retained from the baseline review
 
-No `TODO`, `FIXME`, or `HACK` markers were found in the inspected application/test source. Incomplete work is primarily tracked in [architecture.md](architecture.md), [decisions.md](decisions.md), and the README status/limits sections. Remote issues and historical commits could not be inspected because this workspace has no Git metadata or established remote. Do not interpret that as evidence that no original repository exists elsewhere.
-
-| Finding | Evidence and consequence |
+| Finding | Evidence / implication |
 | --- | --- |
-| Local process access is the current trust boundary | No authentication or authorization exists. Add and test gateway policy before treating the service as a network-accessible integration. |
-| No tenant data model exists | The `customers` table has no tenant identifier. Verifying a tenant claim alone would not establish customer-data isolation. Agree whether Task 2 remains a shared fictional dataset or requires a separately designed tenant-aware store. |
-| Refund retry semantics are intentionally incomplete | Every valid call writes a new refund. Neither request IDs nor identical arguments provide deduplication. HTTP failures must not trigger automatic refund retries without a new idempotency contract. |
-| Persistence evidence can be stronger | The existing test reads refund/audit rows while the original server is running, then launches another process that retrieves a seeded customer. It does not stop the original process and verify the same refund/audit rows after restart. |
-| Logging coverage has a specific gap | `CallToolRequestSchema.parse(request)` occurs before the handler's `try` block, so malformed tool-call envelopes bypass its `tool.call` outcome logging. Generic protocol logging does not provide an equivalent correlated outcome. No duration field is currently recorded. |
-| SQLite scalability and operational behavior are unmeasured | Synchronous calls can block the event loop; a three-second busy timeout is configured. Lock contention, concurrent refund admissions, and signal/error shutdown behavior lack dedicated tests. |
-| Store typing relies on a database assertion | `getCustomer()` casts a SQLite row through `unknown` to `Customer`; this is not runtime output validation. The current controlled schema limits exposure, but a future imported-data adapter should have an explicit validation boundary. |
-| Schema evolution is not implemented | Startup uses `CREATE TABLE IF NOT EXISTS` and seeding, with no versioned migration mechanism. Revisit this if gateway auditing or tenant changes alter persistent tables. |
-| Remote validation and deployment remain unevidenced | A Node 22/24 workflow exists, but no remote run was inspected. No hosting or deployment configuration is present. |
+| Local process access is the current trust boundary | No authentication, HTTP listener, or authorization exists. |
+| Shared fictional customer model | No tenant column or tenant-filtered queries exist. Verified token claims alone cannot establish data isolation. |
+| No refund idempotency contract | Every valid invocation creates another receipt; do not automatically retry refunds after network failures. |
+| Incomplete restart evidence | Tests read refund/audit rows while the original server runs, then use another process for a seeded customer lookup. A complete restart with original refund/audit verification is missing. |
+| Partial observability | Call-envelope parsing precedes the handler logging block; malformed envelopes bypass correlated outcomes. No duration field exists. |
+| SQLite operational limits | Synchronous calls and a three-second busy timeout are configured; lock contention and dedicated signal/error shutdown tests are absent. |
+| Database output typing | Customer rows are asserted as a TypeScript interface, not validated at runtime. Revisit at any imported-data boundary. |
+| No schema migration mechanism | Startup creates tables if absent. Agree schema evolution before adding persistent audit or tenant structures. |
+| Remote evidence unavailable | No Git metadata or established remote was available in this workspace; remote issues, historical commits, CI execution, and deployment were not verified. |
 
-These are observed limits and coverage gaps, not a claim that every untested path is defective.
+No TODO/FIXME/HACK markers were found in application/test source during the initial inspection. The gaps above come from code behavior, test coverage, and the existing roadmap; they are not all confirmed defects.
 
-## Prioritized backlog
+## P0 — Baseline / Documentation
 
-The primary two-week outcome should be a tested Task 2 gateway and clear operational documentation. Keep the agent work to a bounded design/evaluation proposal if gateway work consumes the available time. Defer lower-priority items rather than compressing security and regression validation.
+### D0. Reconcile documentation and acceptance criteria
 
-| Order | Priority / timing | Proposed work | Completion evidence / dependency |
-| --- | --- | --- | --- |
-| 1 | P0 · Week 1 · 0.5 day | Agree the Task 2 design in the decision log: HTTP transport/session model, gateway/service boundary, signed demo-token validation, tenant meaning, downstream credentials, and error mapping. | Reviewable request sequence and allow/deny matrix. Resolve shared fictional data versus actual tenant isolation; no implementation before material decisions are agreed. |
-| 2 | P0 · Week 1 · 0.5–1 day | Strengthen the existing persistence regression before extending the service. | Create a refund, stop the server, reopen the same database with a fresh process, and verify the original refund ID, cents, reason, and linked audit event remain. Existing checks still pass. |
-| 3 | P0 · Week 1 · 1–2 days | Add the customer service HTTP MCP entry point and a harmless mock `admin_` tool, reusing existing validation/business logic. | Real HTTP client completes initialization, discovery, lookup, and simulated refund; stdio remains working. No arbitrary framework choice or business-contract rewrite. Depends on item 1. |
-| 4 | P0 · Weeks 1–2 · 2 days | Implement the security gateway from the agreed design. Validate signature, issuer, audience, expiry, role, and tenant claim; preserve request correlation. | Missing/invalid/expired tokens rejected; authenticated tool discovery unfiltered; viewer `admin_` call returns exactly `-32001: Unauthorized Tool Call`; admin path succeeds; a downstream spy proves denied calls never execute and inbound bearer tokens never reach it. Depends on items 1 and 3. |
-| 5 | P1 · Week 2 · 1 day | Define and test gateway reliability: downstream unavailability, timeout, malformed response, and shutdown/cancellation cleanup. | Bounded failure completion, sanitized responses, correlation retained where possible, and no automatic replay of `trigger_refund`. Evaluate SQLite contention separately from network timeout behavior. Depends on gateway implementation. |
-| 6 | P1 · Week 2 · 0.5–1 day | Improve observability at request boundaries; agree the planned durable denial-audit design before altering tables. | Correlated success/rejection/business/internal outcomes, duration measurements, and tests showing tokens, customer records, and reasons are absent from diagnostic logs. Cover malformed call envelopes. If denial auditing is implemented, prove denials persist without any refund write. |
-| 7 | P1 · Week 2 · 0.5–1 day | Apply agreed README improvements and document reproducible gateway startup, demo, configuration, and local deployment behavior. | A fresh local run follows the documented commands and exercises allowed/denied paths. Document database location, process shutdown, and limitations. Verify Node 24 locally if available; record remote CI results only when an actual remote run is accessible. |
-| 8 | P2 · End of Week 2, capacity permitting · 0.5 day | Propose a bounded AI-agent evaluation use case and API/data integration contract using the existing customer tools. | Reviewable proposal for a read-only customer-lookup agent first, with missing-customer, invalid-ID, tool-selection, and tool-error cases; define expected assertions, maximum tool calls, and future provider-failure cases. Mark it unimplemented and select no model/provider without agreement. |
-| 9 | P2 · After the gateway baseline | Evaluate a deployment target and any real external data/API source with the developer. | Agreed operating environment, persistent-storage requirements, credential boundary, startup/health verification, and rollback approach before packaging or publishing. No invented endpoint, account, client, or deployment result. |
+- **Status:** Implemented documentation in this phase.
+- **Task:** Establish BridgeLayer naming, separate baseline/current/planned status, and distinguish the long-term plan from active-phase scope.
+- **Why it matters:** Prevent historical work or proposed functionality from being presented as new completed implementation.
+- **Existing baseline:** Earlier README, architecture, walkthrough, decision log, handoff, and September 11 scope/development proposal.
+- **Expected change:** Coherent primary documents, explicit status matrix, phase milestones, and this P0–P3 backlog.
+- **Files/components affected:** `README.md`, `PROJECT_PLAN.md`, `PROJECT_SCOPE.md`, `ARCHITECTURE.md`, this file, and supporting handoff/walkthrough/decision references.
+- **Validation criteria:** Current claims trace to inspected behavior or dated checks; local links/case resolve; no historical backdating; setup identifiers match source.
 
-Items 1–7 are an approximately 6–8.5 day sequence, with review and troubleshooting potentially moving later items out of the window. Week 1 is September 11–17; Week 2 is September 18–24. No claim is made that work was performed on every date in those periods.
+## P1 — Core Development
 
-The existing SQLite integration supplies the immediate data-integration use case, and Task 2 supplies the next API boundary. A new CRM or ticketing vendor is not necessary to demonstrate that work. If a real external API is later selected, first agree authentication, field mapping, pagination where applicable, timeouts, rate-limit handling, and deterministic fixtures against its actual contract.
+### D1. Agree the HTTP/security design
 
-## Decisions to discuss before architectural changes
+- **Status:** Planned; first engineering discussion.
+- **Task:** Specify the gateway/service boundary, HTTP sessions, downstream credentials/protection, token claims, errors, and audit decisions.
+- **Why it matters:** The reusable store is ready, but network trust and lifecycle rules are not defined by stdio.
+- **Existing baseline:** Customer handlers/store over stdio and an existing gateway roadmap.
+- **Expected change:** Reviewable request sequence, allow/deny matrix, and decision records. Preserve shared fictional data without claiming tenant isolation.
+- **Files/components affected:** `docs/decisions.md`, `docs/ARCHITECTURE.md`; proposed HTTP/gateway interfaces.
+- **Validation criteria:** Design review resolves downstream bypass protection, session-to-caller association, no bearer-token passthrough, error correlation, and refund retry policy before implementation.
 
-1. **HTTP and downstream trust:** keep the documented gateway → HTTP customer-service shape and preserve stdio. Agree how the downstream service is protected from bypass, how sessions are associated with authenticated callers, and which credentials belong on each connection. Do not pass the caller's bearer token through.
-2. **Identity versus data isolation:** the planned signed demo tokens establish identity claims. Decide separately whether the fictional customer dataset is shared; do not advertise tenant isolation unless the data model and queries enforce it.
-3. **Discovery versus execution:** retain the existing requirement that authenticated `tools/list` is unfiltered. Enforce authorization on execution. The `admin_` prefix rule does not itself authorize real refunds.
-4. **Failure and audit semantics:** agree HTTP authentication failures versus JSON-RPC tool denials, request correlation, timeout/cancellation behavior, and denial-audit storage/retention. Refund retries need a separate business identity/idempotency design.
-5. **Future agent boundary:** an agent would choose tool calls, unlike the current scripted client. Start with a proposed read-only flow and evaluation cases; any refund-capable agent needs an explicitly agreed execution/confirmation policy. No agent framework is selected here.
+### D2. Add the HTTP service and gateway integration
 
-## README review and recommended improvements
+- **Status:** Planned; depends on D1.
+- **Task:** Add the customer HTTP MCP entry point, gateway plumbing, and harmless mock admin tool while retaining stdio.
+- **Why it matters:** Supplies the next API integration boundary using existing business logic.
+- **Existing baseline:** Two MCP tools, Zod schemas, SQLite store, and scripted stdio client.
+- **Expected change:** HTTP initialization/discovery/calls connected to the same customer behavior. D4 security controls and tests accompany this work.
+- **Files/components affected:** `src/mcp/`, a proposed gateway module, new HTTP integration tests, and demo scripts. Exact new filenames/framework decisions are not selected here.
+- **Validation criteria:** HTTP client initializes, lists tools, looks up customers, and creates simulated refunds; current stdio tests and error contracts remain valid.
 
-The README already provides a useful status table, runnable commands, tool arguments, error contracts, stdout guidance, and current limits. Preserve those details. The main gap is that it leads with the learning/assessment framing without first explaining the integration problem or the new professional phase. Recommendations below are proposals; README.md was not edited in this review.
+## P2 — Reliability / Security
 
-| Area | Recommended change |
+### D3. Prove persistence across a complete restart
+
+- **Status:** Planned; perform early, before extending service behavior.
+- **Task:** Create a refund, stop the original server, restart on the same database, and inspect original refund/audit records.
+- **Why it matters:** Closes a specific persistence-evidence gap.
+- **Existing baseline:** On-disk SQLite, atomic writes, and checks performed while the original process remains alive.
+- **Expected change:** A meaningful process-restart regression.
+- **Files/components affected:** `tests/mcp.test.ts`; store changes only if the regression reveals a defect.
+- **Validation criteria:** Original refund ID, amount, reason, and linked audit event survive; existing tests pass; temporary test databases are cleaned up.
+
+### D4. Implement and prove authentication/authorization
+
+- **Status:** Planned; implement with D2 after D1.
+- **Task:** Validate signed demo-token claims and enforce the planned `admin_` tool-execution policy.
+- **Why it matters:** HTTP exposure needs an explicit enforced trust boundary.
+- **Existing baseline:** No authentication; execution policy is documented only.
+- **Expected change:** Signature, issuer, audience, expiry, role, and tenant-claim validation; authenticated discovery remains unfiltered.
+- **Files/components affected:** Proposed gateway/authentication code, HTTP integration tests, mock admin tool.
+- **Validation criteria:** Missing/invalid/expired tokens fail; non-admin execution returns exactly `-32001: Unauthorized Tool Call` with the request ID; admin execution succeeds; spies prove denied calls never execute downstream and inbound bearer tokens never reach the service. Shared fixtures are not described as tenant-isolated data.
+
+### D5. Harden failures and observability
+
+- **Status:** Planned; relevant existing-log coverage can precede HTTP work.
+- **Task:** Define bounded downstream failure/cancellation behavior; add correlated outcomes/durations and malformed-envelope logging coverage. Agree durable denial-audit storage/retention before schema changes.
+- **Why it matters:** Diagnose failures without exposing sensitive values or replaying refund writes.
+- **Existing baseline:** Sanitized service errors, basic stderr logs, success-only database audits, and rollback tests.
+- **Expected change:** Tested downstream unavailability/timeout/malformed-response handling, consistent request diagnostics, and an explicit denial-audit decision.
+- **Files/components affected:** `src/mcp/server.ts`, `src/mcp/stdio.ts` where lifecycle work is needed, `src/logger.ts`, gateway, tests; store only if persistent auditing is agreed.
+- **Validation criteria:** Failures complete within the agreed bound; request correlation survives where possible; cancellation/shutdown cases are tested; no automatic refund replay; logs omit tokens, customer records, and reasons; stdout remains protocol-only. If denial auditing is implemented, prove it persists without creating a refund.
+
+## P3 — Demonstration
+
+### D6. Deliver the local HTTP demo and operating guide
+
+- **Status:** Planned; depends on a tested gateway.
+- **Task:** Document and demonstrate allowed/denied flows, startup/configuration, storage, and shutdown.
+- **Why it matters:** Make the integration independently reproducible.
+- **Existing baseline:** Working stdio demo, npm commands, and VS Code child-process debugging.
+- **Expected change:** HTTP examples and a local runbook based on actual implementation.
+- **Files/components affected:** Demo scripts, README, architecture/runbook, and VS Code configuration if needed.
+- **Validation criteria:** A clean local setup follows documented commands and exercises success/denial; database location and lifecycle are explicit. Verify the recommended Node 24 runtime when available; record CI results only after an actual run. No hosted deployment is claimed.
+
+## Sequencing and deferred work
+
+Suggested order: D0 → D1 and D3 → D2 with D4 → D5 → D6. Prioritize design, baseline evidence, and gateway behavior in the first week; continue security/failure validation and demonstration in the second as capacity permits. Do not compress the acceptance checks to fit a date.
+
+The immediate data integration is SQLite, and the next API boundary is HTTP MCP. Streaming PII, token reservations/fallback, React, live agents, new external data vendors, and hosted deployment remain outside the initial delivery. A later read-only agent proposal should specify expected tool choices, invalid/missing customer cases, tool errors, and bounded execution before selecting a provider.
+
+## Reconciliation record
+
+The approved documentation proposal resolves these discrepancies without changing source behavior:
+
+| Previous state | Reconciled state |
 | --- | --- |
-| Project framing | Add the independent development phase and link to `docs/PROJECT_SCOPE.md`; retain the personal/FDE origin and use “customer-inspired integration case study.” |
-| Problem and use case | Explain that the working system exposes fictional customer lookup and simulated refunds through a validated, discoverable tool interface. Do not imply an actual client or measured support outcome. |
-| MCP usage | Name the one server, two tools, stdio transport, and initialization → discovery → tool-call flow. Explain that protocol interoperability is tested with the official SDK client. |
-| AI/agent workflow | Add a visible paragraph stating that the current client is scripted and there are no LLM calls or autonomous tool decisions. Label the guardrail, limiter, fallback, and possible agent extension as future work. |
-| Architecture | Put a compact current-flow diagram near the top. Link separately to the planned architecture so future gateways are not mistaken for working components. |
-| Setup | Retain `npm ci`, `npm run check`, and `npm run demo`. Point out `.nvmrc`/Node 24, provide a concrete `SUPPORTBRIDGE_DB` example, and explain temporary demo storage versus persistent server storage. No API key is required for the current demo. |
-| Demo/use cases | Show a short expected-output excerpt: customer found, simulated `amount_cents: 1250`, and `-32602` for invalid input. Explain where to inspect the restart/rollback/error tests and how to debug the child server in VS Code. |
-| Validation and roadmap | Date local verification, distinguish configured CI from verified CI, and link to the prioritized development plan. Keep tasks marked planned until implementation and checks provide evidence. |
+| User requested BridgeLayer; repository prose used SupportBridge | BridgeLayer is the documentation name; earlier name and executable identifiers are explicitly preserved. |
+| No long-term `PROJECT_PLAN.md`; scope repeated later roadmap | Dedicated long-term plan; active scope limited to gateway and supporting work. |
+| Lowercase `architecture.md` and ambiguous present-tense mock admin description | Canonical `ARCHITECTURE.md`, updated links, and explicit component statuses. |
+| README led with assessment tasks | Problem, current capabilities, workflow, setup, evidence, and roadmap lead the presentation. |
+| Broad logging/persistence claims | Malformed-call logging and full-restart test gaps are explicit. |
+| Handoff categorical remote/credential statements | Historical context and current evidence limits are distinguished. |
+| Earlier backlog priority structure / README recommendations | Approved P0–P3 backlog; README recommendations applied rather than left as pending text. |
 
-Suggested opening for review:
+No code-versus-doc conflict was found suggesting SQLite was absent, Python was the implementation language, or gateways were already running. The historical decision log retains the origin of the explicit error contract using FDE scenario wording.
 
-> SupportBridge is an independent software and AI development project exploring customer-support integrations through MCP. Its current implementation exposes fictional customer lookup and simulated refunds through a TypeScript MCP server, with strict input validation, SQLite persistence, and tests over actual stdio. It is a customer-inspired integration case study.
->
-> Developed by Yu-Chen Su (Will), Independent Software & AI Consultant. The project began as a personal/FDE side project before September 11, 2026; a new active professional development phase began on that date. The current demo uses a scripted MCP client. HTTP security and AI-provider workflows remain planned.
-
-## Evidence and change record for this review
-
-On September 11, 2026, the source, package configuration, tests, demo, VS Code configuration, CI definition, README, handoff, and architecture/decision/walkthrough documents were inspected. `npm run check` passed all six tests and type checking; `npm run demo` completed on Node `25.5.0` with npm `11.8.0` using the installed dependencies. A fresh installation and remote CI were not tested.
-
-This review adds scope and planning documentation. It does not change application behavior, select an external service, publish a deployment, or modify Git history. All future implementation follows explain → agree → implement → demonstrate → practice explaining back.
+Local validation recorded September 11: type checking, six tests, and SDK demo passed on Node 25.5.0 / npm 11.8.0 using installed dependencies. No new application code was changed or new runtime tests claimed by this documentation reconciliation. No Git history was rewritten or initialized, and no historical timestamps were backdated.

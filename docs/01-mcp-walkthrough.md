@@ -1,4 +1,6 @@
-# Lesson 1: follow one MCP request
+# BridgeLayer — Lesson 1: Follow One MCP Request
+
+This guide explains the working stdio foundation that predates the September 11, 2026 active development phase. The prototype was previously named SupportBridge; executable identifiers retain that name. See the [phase scope](PROJECT_SCOPE.md), [current architecture](ARCHITECTURE.md), and [development backlog](DEVELOPMENT_PLAN.md) for subsequent work.
 
 The goal is to explain the first milestone from request to database result, and to connect unfamiliar TypeScript syntax to ideas you already know from Python.
 
@@ -78,7 +80,7 @@ The server therefore logs only through `process.stderr.write`. The demo's `conso
 
 ## Why errors have layers
 
-A malformed request is different from a legitimate request for a nonexistent customer. Invalid arguments produce a JSON-RPC error in this assessment. A missing customer produces an MCP tool result marked `isError: true`. An unexpected database error becomes a sanitized internal error.
+A malformed request is different from a legitimate request for a nonexistent customer. Invalid arguments produce a JSON-RPC error under this project's existing compatibility contract. A missing customer produces an MCP tool result marked `isError: true`. An unexpected database error becomes a sanitized internal error.
 
 The request ID connects a response to its request; it is not an authentication token or an idempotency key. A notification has no ID and receives no response. Our tool execution handlers are request handlers, so a `tools/call` notification does not trigger a refund.
 
@@ -105,7 +107,7 @@ Small exercise: predict the outcome for amount `0`, amount `"12.50"`, amount `0.
 
 ## Interview script for the implemented milestone
 
-“I built a customer MCP server using the official TypeScript SDK. It exposes lookup and simulated-refund tools. Zod validates external arguments before business logic runs, and I use a lower-level SDK API to return the assessment's required JSON-RPC validation errors. The SDK still handles protocol initialization and transport serialization.
+“I built a customer MCP server using the official TypeScript SDK. It exposes lookup and simulated-refund tools. Zod validates external arguments before business logic runs, and I use a lower-level SDK API to preserve the original FDE scenario's JSON-RPC validation-error contract. The SDK still handles protocol initialization and transport serialization.
 
 “Refunds are stored as integer cents in SQLite, and each successful refund and its audit event commit in one transaction. I tested the real stdio process, including invalid requests and an injected database failure. The current implementation is a local simulation; HTTP authorization and the LLM gateway are upcoming milestones.”
 
