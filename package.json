@@ -1,0 +1,26 @@
+{
+  "name": "supportbridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An FDE learning portfolio: customer tools, secure gateways, and resilient streaming.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "start:mcp": "node dist/src/mcp/stdio.js",
+    "demo": "npm run build --silent && node dist/scripts/demo.js",
+    "test": "npm run build --silent && node --test dist/tests/*.test.js",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "7.0.2"
+  }
+}

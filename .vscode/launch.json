@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "Debug MCP demo and server",
+    "type": "node",
+    "request": "launch",
+    "program": "${workspaceFolder}/dist/scripts/demo.js",
+    "cwd": "${workspaceFolder}",
+    "preLaunchTask": "Build",
+    "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+    "autoAttachChildProcesses": true,
+    "console": "integratedTerminal",
+    "skipFiles": ["<node_internals>/**"]
+  }]
+}
