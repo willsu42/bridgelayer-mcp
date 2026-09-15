@@ -50,14 +50,18 @@ async function openHarness(t: TestContext, database?: string) {
       resolve(code);
     });
   });
-  t.after(async () => {
+  let stopping: Promise<void> | undefined;
+  const stop = () => stopping ??= (async () => {
     child.stdin.end();
     const killTimer = setTimeout(() => child.kill('SIGKILL'), 2000);
     const code = await exited;
     clearTimeout(killTimer);
     reader.close();
-    await rm(directory, { recursive: true, force: true });
     assert.equal(code, 0, stderr);
+  })();
+  t.after(async () => {
+    await stop();
+    await rm(directory, { recursive: true, force: true });
     assert.equal(wireError, undefined);
     assert.ok(lines.length > 0);
     assert.match(stderr, /server.ready/);
@@ -79,7 +83,7 @@ async function openHarness(t: TestContext, database?: string) {
   const initialized = await request('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'wire-test', version: '1.0.0' } });
   assert.ok(initialized.result);
   child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`);
-  return { dbPath, raw, request, notify: (method: string, params: unknown) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`) };
+  return { dbPath, raw, request, stop, notify: (method: string, params: unknown) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`) };
 }
 
 const validRefund = { customer_id: 'CUST-00001', amount: 12.5, reason: 'Private refund reason for duplicate charge' };
@@ -99,9 +103,18 @@ test('real stdio discovery, lookup, refund, and durable atomic audit', async t =
   assert.equal(db.prepare('SELECT COUNT(*) AS count FROM refunds').get()?.count, 1);
   assert.equal(db.prepare('SELECT COUNT(*) AS count FROM audit_events').get()?.count, 1);
   db.close();
+  const refundId = refund.result?.structuredContent?.refund_id;
+  assert.ok(typeof refundId === 'string');
+  await client.stop();
   const secondClient = await openHarness(t, client.dbPath);
   const reread = await secondClient.request('tools/call', { name: 'get_customer_record', arguments: { customer_id: 'CUST-00001' } });
   assert.ok(reread.result);
+  const restartedDb = new DatabaseSync(secondClient.dbPath);
+  const persisted = restartedDb.prepare('SELECT amount_cents, reason FROM refunds WHERE refund_id = ?').get(refundId);
+  assert.equal(persisted?.amount_cents, 1250);
+  assert.equal(persisted?.reason, validRefund.reason);
+  assert.equal(restartedDb.prepare('SELECT COUNT(*) AS count FROM audit_events WHERE refund_id = ?').get(refundId)?.count, 1);
+  restartedDb.close();
 });
 
 test('invalid wire arguments return -32602 and never write refunds', async t => {

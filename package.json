@@ -11,12 +11,16 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "start:mcp": "node dist/src/mcp/stdio.js",
+    "start:http": "node dist/src/http/main.js",
+    "token": "node dist/scripts/token.js",
+    "demo:http": "npm run build --silent && node dist/scripts/demo-http.js",
     "demo": "npm run build --silent && node dist/scripts/demo.js",
     "test": "npm run build --silent && node --test dist/tests/*.test.js",
     "check": "npm run typecheck && npm test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
+    "jose": "6.2.12",
     "zod": "4.5.4"
   },
   "devDependencies": {

@@ -35,7 +35,12 @@ const tools: Tool[] = [
   },
 ];
 
-export function createCustomerServer(store: CustomerStore): Server {
+export function createCustomerServer(store: CustomerStore, options: { adminTool?: boolean } = {}): Server {
+  const availableTools: Tool[] = options.adminTool ? [...tools, {
+    name: 'admin_health_check', description: 'Harmless admin test tool. Returns a fixed health response; changes no data.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  }] : tools;
   // This advanced API keeps assessment-required argument failures as JSON-RPC errors.
   // The SDK still owns initialization, capabilities, request IDs, and serialization.
   const server = new Server({ name: 'supportbridge-customer', version: '0.1.0' }, {
@@ -45,15 +50,22 @@ export function createCustomerServer(store: CustomerStore): Server {
 
   server.setRequestHandler(z.object({ method: z.literal('tools/list'), params: z.unknown().optional() }), request => {
     parse(z.object({ _meta: z.record(z.string(), z.unknown()).optional() }).strict(), request.params ?? {});
-    return { tools };
+    return { tools: availableTools };
   });
 
   // Keep the registration envelope permissive so malformed params reach the SDK's
   // tools/call validator, which maps them to InvalidParams instead of an internal error.
   server.setRequestHandler(z.object({ method: z.literal('tools/call'), params: z.unknown().optional() }), (request, extra) => {
-    const { params } = CallToolRequestSchema.parse(request);
-    const tool = params.name === 'get_customer_record' || params.name === 'trigger_refund' ? params.name : 'unknown';
+    const started = performance.now();
+    let tool: 'get_customer_record' | 'trigger_refund' | 'admin_health_check' | 'unknown' = 'unknown';
+    const record = (outcome: 'success' | 'rejected' | 'business_error' | 'internal_error') => log({
+      event: 'tool.call', request_id: extra.requestId, tool, outcome,
+      duration_ms: Math.round((performance.now() - started) * 100) / 100,
+    });
     try {
+      const params = parse(CallToolRequestSchema, request).params;
+      tool = params.name === 'get_customer_record' || params.name === 'trigger_refund' ||
+        (options.adminTool && params.name === 'admin_health_check') ? params.name as typeof tool : 'unknown';
       let value: Record<string, unknown>;
       switch (params.name) {
         case 'get_customer_record': {
@@ -64,21 +76,26 @@ export function createCustomerServer(store: CustomerStore): Server {
         case 'trigger_refund':
           value = store.refund(parse(refundInput, params.arguments));
           break;
+        case 'admin_health_check':
+          if (!options.adminTool) throw new McpError(ErrorCode.InvalidParams, 'Unknown tool');
+          parse(z.strictObject({}), params.arguments ?? {});
+          value = { status: 'ok', simulated: true };
+          break;
         default:
           throw new McpError(ErrorCode.InvalidParams, 'Unknown tool');
       }
-      log({ event: 'tool.call', request_id: extra.requestId, tool, outcome: 'success' });
+      record('success');
       return result(value);
     } catch (error) {
       if (error instanceof McpError) {
-        log({ event: 'tool.call', request_id: extra.requestId, tool, outcome: 'rejected' });
+        record('rejected');
         throw error;
       }
       if (error instanceof BusinessError) {
-        log({ event: 'tool.call', request_id: extra.requestId, tool, outcome: 'business_error' });
+        record('business_error');
         return result({ error: { code: error.code, message: error.message } }, true);
       }
-      log({ event: 'tool.call', request_id: extra.requestId, tool, outcome: 'internal_error' });
+      record('internal_error');
       throw new McpError(ErrorCode.InternalError, 'Customer service could not complete the request');
     }
   });
