@@ -1,126 +1,131 @@
 # BridgeLayer
 
-BridgeLayer is an independent software and AI development project exploring customer-support integrations through MCP. The working system exposes fictional customer lookup and simulated refunds through a TypeScript MCP server, with strict validation, SQLite persistence, and tests over actual stdio.
+BridgeLayer is an independent software and AI development project exploring customer-support integrations through MCP. It provides fictional customer lookup and simulated refunds through a TypeScript MCP service, with SQLite persistence and an authenticated HTTP security gateway.
 
-Developed by **Yu-Chen Su (Will), Independent Software & AI Consultant**. BridgeLayer builds on the personal/FDE prototype previously named SupportBridge. The current active professional development phase began **September 11, 2026**; the project and its implemented foundation predate that phase. This is a customer-inspired integration case study, with no evidenced actual client engagement.
+Developed by **Yu-Chen Su (Will), Independent Software & AI Consultant**. The personal/FDE prototype was previously named SupportBridge and predates the active professional development phase beginning **September 11, 2026**. This is a customer-inspired integration case study, with no evidenced actual client engagement.
 
 ## Problem being solved
 
-Support operations need a clear boundary between incoming requests, validated arguments, business rules, and stored results. This reference scenario demonstrates that boundary through discoverable MCP tools and reproducible failures. Its intended support workflow is customer lookup followed by a simulated refund; the current interface is a developer-operated client.
+Customer-support integrations need a clear boundary between incoming requests, authenticated callers, permitted operations, business rules, and stored results. BridgeLayer demonstrates those boundaries with discoverable MCP tools and reproducible success/failure cases. The current interface is a developer-operated client; no operator UI or LLM agent is implemented.
 
 ## Current capabilities
 
 ### Available Now
 
-| Capability | Behavior |
+| Capability | Implemented behavior |
 | --- | --- |
-| MCP discovery | One stdio server advertises two tools with JSON input schemas. |
-| `get_customer_record` | Takes `customer_id`; returns a fictional customer or a business error. |
-| `trigger_refund` | Takes `customer_id`, `amount`, and `reason`; stores a simulated USD refund and its success audit event atomically. |
-| Validation and persistence | Strict Zod arguments, whole-cent business checks, and on-disk SQLite. |
-| Verification | Six tests, an official SDK-client demo, and VS Code debugging configuration. |
-| Diagnostics | Structured stderr logs for handled tool outcomes; coverage gaps are documented below. |
+| Task 1: customer MCP service | Original stdio server with strict validation, lookup, simulated refunds, SQLite, and rollback tests. |
+| Task 2: HTTP MCP security gateway | Stateless HTTP MCP with signed demo JWTs, role policy, request correlation, and separate downstream credentials. |
+| `get_customer_record` | Takes `customer_id`; returns a fictional record or business error. |
+| `trigger_refund` | Takes `customer_id`, `amount`, `reason`; atomically stores a simulated refund and its success audit. |
+| `admin_health_check` | HTTP-only harmless admin test tool; returns fixed health information without data changes. |
+| Denial audit / diagnostics | Separate SQLite denial records; correlated gateway outcomes and durations; no bearer tokens or tool arguments in diagnostic fields. |
+| Verification / demos | Real stdio and HTTP tests, official SDK clients, fault injection, and separate stdio/HTTP demos. |
 
-IDs require five ASCII digits after `CUST-`. Extra arguments are rejected. Amounts must be finite positive JSON numbers; numeric strings are not converted. Reasons are trimmed before a ten-character minimum check. The store additionally rejects fractional cents and amounts beyond its safe integer-cent range. Receipts report `amount_cents`, `currency`, and `status: "simulated"`.
+Customer IDs require five ASCII digits after `CUST-`; extra arguments are rejected. Amounts must be finite positive numbers, with no string coercion; the store additionally requires safely representable whole cents. Reasons are trimmed before the ten-character minimum check. Receipts return integer `amount_cents`, USD currency, and simulated status.
 
 ### Planned
 
-HTTP MCP access and a security gateway are next. Streaming PII protection, token budgets, model fallback, and a React support console are later roadmap work. None is implemented. Live agent execution and external API vendors remain separate extension candidates.
+**Tasks 3–4 remain planned:** streaming PII guardrails and token limiting/model fallback. The React support console is also planned. Live agents, real customer APIs, and hosted deployment remain separate extension candidates.
 
 ## Architecture
 
-All components in this diagram exist:
-
 ```mermaid
 flowchart LR
-    C[Scripted MCP client] -->|stdio| M[MCP server and tool handlers]
-    M --> V[Zod validation]
-    V --> S[Customer store and business rules]
-    S --> D[(SQLite)]
-    M --> L[JSON stderr logs]
+    C[HTTP MCP client] -->|demo bearer JWT| G[Security gateway]
+    G -->|separate service credential| H[Customer HTTP entry point]
+    H --> S[Customer handlers / validation / store]
+    L[Existing stdio client] --> T[Stdio entry point]
+    T --> S
+    S --> D[(Customer / refund SQLite)]
+    G --> A[(Separate denial SQLite)]
 ```
 
-The SDK handles protocol initialization, dispatch, serialization, and request correlation. The store owns customer lookup and refund/audit transactions. Server stdout carries protocol messages; stderr carries diagnostics.
+Both HTTP listeners bind loopback. The local launcher runs them in one Node process; these are separate HTTP trust boundaries, not OS-process isolation. Each POST has its own SDK transport; there is no shared MCP session state. The original stdio entry point remains available with two tools.
 
-The current demo explicitly selects tools in code. **There are no LLM calls or autonomous agent decisions.** The MCP interface is working infrastructure for possible future AI workflows.
+The gateway authenticates every request, leaves authenticated discovery unfiltered, and denies non-admin `admin_` calls before forwarding. Downstream headers are explicitly constructed; the client's bearer token is never passed through.
 
-See [architecture and trust boundaries](docs/ARCHITECTURE.md) for current limitations and clearly labeled planned components.
+**No LLM chooses tools:** both demo clients call them explicitly. See [architecture](docs/ARCHITECTURE.md) for boundaries and limitations.
 
 ## Example workflow
 
-`npm run demo` launches a real server process, initializes MCP, discovers tools, retrieves `CUST-00001`, creates a simulated refund for `12.5` USD, and demonstrates rejection of a negative amount.
+```sh
+npm run demo:http
+```
 
-Expected values include:
+The temporary HTTP demo initializes viewer/admin clients and demonstrates:
 
-- Discovered tools: `get_customer_record`, `trigger_refund`.
-- Customer: the fictional Alex Rivera.
-- Receipt: `amount_cents: 1250`, `currency: "USD"`, `status: "simulated"`.
-- Invalid amount: JSON-RPC `-32602`.
+1. A viewer discovers all three HTTP tools, including the admin tool.
+2. Customer lookup returns fictional Alex Rivera.
+3. A simulated refund returns `amount_cents: 1250`.
+4. Viewer admin execution fails with `-32001: Unauthorized Tool Call`.
+5. Admin execution succeeds.
+6. Missing credentials fail with HTTP 401.
 
-The demo uses a temporary database and removes it afterward. Its human-readable output comes from the client process.
+It generates temporary credentials/databases, does not print tokens, and cleans up afterward. `npm run demo` still runs the original stdio demonstration.
 
 ## Tech stack
 
-Repository pins: TypeScript `7.0.2`, official MCP SDK `1.30.0`, and Zod `4.5.4`. The application uses Node.js, ES modules, built-in `node:sqlite`, npm, and Node's test runner. A GitHub Actions workflow is configured for Node 22 and 24.
-
-React, an HTTP framework, and an LLM SDK are not used by the current application source.
+Repository pins: TypeScript `7.0.2`, MCP SDK `1.30.0`, Zod `4.5.4`, and `jose` `6.2.12` for JWTs. The application uses Node.js ES modules, built-in HTTP/SQLite, npm, and Node's test runner. No application HTTP framework, React app, or LLM SDK is introduced.
 
 ## Setup
 
-Use Node 24, as specified in `.nvmrc`. The package declares Node `>=22.13.0`. No API key is required for the current demo.
+Use Node 24 (`.nvmrc`); the package minimum is Node 22.13.0.
 
 ```sh
 npm ci
 npm run check
-npm run demo
+npm run demo:http
 ```
 
-For a persistent server:
+The demo requires no external API key. For persistent HTTP operation, build, set two different secrets of at least 32 bytes, and run:
 
 ```sh
 npm run build
-node dist/src/mcp/stdio.js
+export BRIDGELAYER_JWT_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
+export BRIDGELAYER_SERVICE_KEY="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
+npm run start:http
 ```
 
-The default database is `data/supportbridge.sqlite`, relative to the working directory. To choose another path:
+Gateway: `http://127.0.0.1:3030/mcp`. Protected customer service: port `3031`. Stop with Ctrl+C. The [Task 2 walkthrough](docs/02-http-gateway-walkthrough.md) covers token issuance, configuration, protocol headers, failures, and audit lifecycle. Tokens issued by the local operator last at most 15 minutes; this is not a full OAuth authorization server.
 
-```sh
-SUPPORTBRIDGE_DB="$PWD/data/demo.sqlite" node dist/src/mcp/stdio.js
-```
+For persistent stdio operation, use `node dist/src/mcp/stdio.js`. It waits for MCP input, not interactive terminal commands. A host should spawn Node directly; normal npm banners can contaminate protocol stdout.
 
-The server waits for newline-delimited MCP messages on stdin; it is not an interactive prompt. An MCP host should spawn `node` directly with the absolute path to `dist/src/mcp/stdio.js`. Normal npm script banners share stdout and can disrupt the protocol; `npm run --silent start:mcp` is available for manual use.
-
-**Naming compatibility:** BridgeLayer is the project documentation name. Existing executable/configuration identifiers remain `supportbridge` (package), `supportbridge-customer` (MCP server), `SUPPORTBRIDGE_DB`, and `supportbridge.code-workspace`. The default database filename also retains the earlier name.
-
-Open the folder or workspace file in VS Code. Build, Test, and Demo tasks and a debugger with child-process attachment are configured. Start with the [walkthrough](docs/01-mcp-walkthrough.md) or [handoff](HANDOFF.md).
+Naming compatibility: package `supportbridge`, MCP server `supportbridge-customer`, `SUPPORTBRIDGE_DB`, default `data/supportbridge.sqlite`, and `supportbridge.code-workspace` retain their working names. Gateway denials default to `data/gateway-audit.sqlite`. Both database paths are configurable.
 
 ## Testing
 
-Local validation on **September 11, 2026**, using installed dependencies and Node `25.5.0` / npm `11.8.0`, passed type checking, all six tests, and the SDK-client demo. This was recorded before the documentation reconciliation; no application changes were made by that reconciliation. A fresh install and the remote Node 22/24 CI matrix were not verified.
+On **September 15, 2026**, local type checking and **23 tests/subtests** passed on Node `25.5.0`, including the existing six stdio tests and new HTTP integration/failure checks. The HTTP SDK-client demo also completed. The suite now verifies original refund/audit records after a complete server restart.
 
-Five tests launch the real stdio server. Coverage includes discovery, invalid arguments without writes, whole cents, business errors, injected audit failure with rollback, sanitized errors, malformed frames, request correlation, notifications, and stdout isolation. One test directly checks non-JSON numeric inputs. A full server-restart refund/audit regression remains planned.
+HTTP coverage includes token validation, direct-service rejection, zero downstream calls after denial, durable denial records, audit failure, Origin/Host checks, invalid/batched/oversize input, credential separation, concurrent identical request IDs, downstream reply validation, timeout, disconnect/shutdown cancellation, and log privacy.
+
+These runs used installed dependencies. A fresh `npm ci`, recommended Node 24 run, and remote Node 22/24 CI matrix are not yet verified. Node may emit a SQLite warning on stderr without breaking protocol behavior.
+
+Final recheck on September 16 (America/Chicago): type checking and all 23 tests/subtests passed again after request-cleanup changes; the original stdio demo also completed.
 
 | Failure | Existing response |
 | --- | --- |
+| Missing/invalid gateway credentials | HTTP 401 with Bearer challenge |
+| Non-admin `admin_` call | HTTP 200; JSON-RPC `-32001: Unauthorized Tool Call`, same ID |
 | Invalid tool arguments / unknown tool | JSON-RPC `-32602` |
-| Unknown JSON-RPC method | JSON-RPC `-32601` |
-| Malformed JSON / invalid message envelope | `-32700` / `-32600`; no correlatable ID in the pinned SDK envelope |
-| Customer missing / unsupported monetary precision | Tool result with `isError: true` and a business error code |
+| Customer missing / unsupported money precision | Tool result `isError: true` |
 | Unexpected customer-service exception | Sanitized JSON-RPC `-32603` |
+| Invalid/unavailable downstream or audit failure | Sanitized HTTP 502 / `-32002` |
+| Downstream timeout | HTTP 504 / `-32003`; operation outcome may be unknown |
 
-The explicit error mapping is the existing compatibility contract; its origin and SDK-specific details are in the [decision log](docs/decisions.md). Node may emit a SQLite experimental warning on stderr without contaminating stdout.
+See the [decision log](docs/decisions.md) for pinned SDK framing/error details and the [HTTP walkthrough](docs/02-http-gateway-walkthrough.md) for boundary-level HTTP errors.
 
 ## Current development status
 
-The pre-September 11 foundation is implemented. The new phase has established scope/planning documentation and renewed baseline validation. Gateway, authentication, and AI functionality remain planned; documentation approval does not mean implementation has started.
+Task 1 predates September 11. Scope/documentation reconciliation belongs to the new phase; Task 2 and the restart regression were implemented and validated in this phase, with current verification dated September 15. Git history has not been rewritten.
 
-Current limits: local process access grants tool access; there is no tenant data isolation or payment integration. Repeated valid refund calls create separate receipts. Diagnostic logs omit customer records and refund reasons, but malformed call envelopes bypass correlated tool-outcome logging. SQLite audit records cover successful simulated refunds only. No deployment, production throughput, or AI-quality result is claimed.
+Limits: fictional records are shared, without tenant data isolation. Viewers can create simulated refunds; the admin-prefix rule is not real-payment authorization. Requests are never automatically retried; aborting a timeout cannot undo a committed refund. Denial auditing has no automated retention policy. There is no hosted deployment, measured production capacity, streaming guardrail, token budget, or AI workflow.
 
-## Roadmap
+## Roadmap and learning
 
-1. Maintain the MCP server/tools and strengthen regression evidence.
-2. Agree and build the HTTP MCP security gateway.
-3. Implement and evaluate streaming PII guardrails in a later phase.
-4. Implement and evaluate token reservations and model fallback in a later phase.
+1. Task 1 — implemented; retain stdio compatibility.
+2. Task 2 — implemented locally; HTTP/security behavior and demonstrations are tested.
+3. Task 3 — planned streaming PII guardrails.
+4. Task 4 — planned token budgets/model fallback.
 
-Read the [long-term project plan](docs/PROJECT_PLAN.md), [September 11 phase scope](docs/PROJECT_SCOPE.md), and [prioritized development backlog](docs/DEVELOPMENT_PLAN.md). The React console follows working backend demonstrations; live agents and hosting need separate design decisions.
+Read the [project plan](docs/PROJECT_PLAN.md), [active scope](docs/PROJECT_SCOPE.md), and [development backlog](docs/DEVELOPMENT_PLAN.md). Start code discussion with the [stdio walkthrough](docs/01-mcp-walkthrough.md) and [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). VS Code tasks/debugging and the [handoff](HANDOFF.md) support continuing the explain → agree → implement → demonstrate → practice workflow.

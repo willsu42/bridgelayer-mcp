@@ -94,7 +94,12 @@ export async function startGateway(options: {
       json(res, 200, value);
     } catch (error) {
       if (res.destroyed) { outcome = 'cancelled'; return; }
-      if (error instanceof HttpError) rpcError(res, error.status, error.code, error.message, id);
+      if (error instanceof HttpError) {
+        // Early authentication/header failures may leave an unread request body.
+        res.setHeader('connection', 'close');
+        req.resume();
+        rpcError(res, error.status, error.code, error.message, id);
+      }
       else {
         outcome = timedOut ? 'timeout' : 'internal_error';
         rpcError(res, timedOut ? 504 : 502, timedOut ? -32003 : -32002,

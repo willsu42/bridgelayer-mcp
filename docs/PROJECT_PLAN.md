@@ -11,7 +11,7 @@ The four workstreams remain appropriate to the current architecture. Phase commi
 - **Missing:** absent and not committed as an implementation milestone.
 - **Planned:** documented future functionality with no implementation.
 
-“In Progress” below identifies actual ongoing work, not approved intentions. At this reconciliation, no new application functionality is in progress. Documentation reconciliation is completed by this update.
+“In Progress” below identifies ongoing work, not intentions. Task 2 is now implemented and locally tested, with verification dated September 15, 2026. No later workstream has started.
 
 ## Documentation status matrix
 
@@ -19,16 +19,19 @@ Pre-September 11 attribution uses the developer's statement and September 8 insp
 
 | Capability | Repo status | Existing before 9/11 | Current phase | Planned |
 | --- | --- | --- | --- | --- |
-| MCP server and stdio | Implemented | Yes | Maintain compatibility | HTTP service entry point |
-| Two customer tools and discovery | Implemented | Yes | Maintain and test | Harmless admin test tool |
+| MCP server and stdio | Implemented | Yes | Compatibility retained | — |
+| Two customer tools and discovery | Implemented | Yes | HTTP entry point added | — |
+| HTTP admin health test tool | Implemented | No | Added with Task 2; stdio still has two tools | — |
 | Zod validation / error mapping | Implemented | Yes | Preserve contracts | HTTP boundary tests |
-| SQLite and atomic refund/audit writes | Implemented | Yes | Strengthen restart evidence | Denial auditing after design |
+| SQLite and atomic refund/audit writes | Implemented | Yes | Full-restart regression added | — |
+| Separate SQLite denial audit | Implemented | No | Added with Task 2 | Automated retention not implemented |
 | Scripted SDK client | Implemented | Yes | Extend demo later | HTTP allowed/denied flows |
-| Six automated tests | Implemented | Yes | Add regressions | Gateway/failure tests |
-| Logging / observability | Partial | Basic logs: yes | Improve coverage/durations | Gateway audit visibility |
+| Six original stdio tests | Implemented | Yes | Restart coverage strengthened | — |
+| HTTP integration/failure tests | Implemented | No | 23 total tests/subtests now pass locally | Additional environment validation |
+| Logging / observability | Partial | Basic logs: yes | Gateway correlation/durations and denial audit added | Centralized metrics not implemented |
 | Node 22/24 CI workflow definition | Implemented | Yes | Verify when runnable | — |
 | Verified remote CI results | Missing | Not established | Record actual results | — |
-| HTTP security gateway / authentication | Planned | No implementation | Next engineering milestone | Signed demo tokens and authorization |
+| HTTP security gateway / authentication | Implemented | No | Signed demo tokens, role policy, separate downstream credentials | Production OAuth outside current scope |
 | Streaming PII guardrail | Planned | No | Later phase | Incremental stream inspection |
 | Token limiter / model fallback | Planned | No | Later phase | Reservations and routing |
 | LLM calls / autonomous agents | Missing | No | Out of initial scope | Candidate extension |
@@ -46,11 +49,11 @@ No MCP resources or prompt handlers are registered. The demo is scripted; no mod
 
 ### In Progress
 
-No source implementation is currently in progress. Baseline documentation has been reconciled under the BridgeLayer name.
+No additional work is in progress. Task 2 has added HTTP access and a full-restart regression while retaining stdio behavior.
 
 ### Planned
 
-Strengthen refund/audit persistence tests across a complete server restart. Preserve existing stdio and error contracts while adding the HTTP service entry point required by workstream 2. Improve relevant logging, lifecycle, and failure coverage. Existing SQLite integration is the current data-integration scenario; no external CRM or ticketing vendor is selected.
+Continue maintaining the service. The HTTP entry point, original-record restart regression, and gateway logging/failure coverage are now implemented. Broader SQLite lock-contention measurement and imported-data validation remain future improvements; no external CRM or ticketing vendor is selected.
 
 Acceptance: existing tests remain green; original refund/audit records survive restart; an HTTP client can initialize, discover, and call the existing tools once the new entry point is implemented.
 
@@ -58,23 +61,17 @@ Acceptance: existing tests remain green; original refund/audit records survive r
 
 ### Existing
 
-No gateway, HTTP listener, authentication, authorization, or tenant data isolation exists. The customer handlers and store are reusable downstream foundations, not partial gateway implementation.
+Task 2 is implemented: stateless HTTP MCP service, JWT-authenticated gateway, separate service credential, HTTP-only harmless admin tool, minimal SQLite denial audit, bounded proxy failures/cancellation, and correlated diagnostics. The local launcher runs two loopback listeners in one process. Customer records remain shared; there is no tenant data isolation.
 
 ### In Progress
 
-None. The next step is agreement on HTTP/session behavior, downstream protection, credentials, error mapping, and audit storage.
+None. Implementation and local acceptance checks are complete; see the [Task 2 walkthrough](02-http-gateway-walkthrough.md) for configuration and current limits.
 
 ### Planned
 
-Add a gateway in front of an HTTP customer-service entry point and a harmless mock `admin_` tool for testing. Verify signed demo-token signature, issuer, audience, expiry, role, and tenant identity. These tokens are not a complete OAuth authorization-server implementation.
+Further environment validation and operational hardening may follow: recommended Node 24, clean dependency installation, remote CI, and an explicit automated audit-retention policy. Full OAuth, tenant-aware customer data, real-payment authority, and hosted operation remain outside this implementation.
 
-For authenticated requests, forward `tools/list` without filtering. Block non-admin execution of `admin_` tools with exactly `-32001: Unauthorized Tool Call`, preserving the request ID. Never forward the inbound bearer token downstream. Define protection against bypassing the gateway.
-
-Keep the initial scenario's fictional customer data shared. A verified tenant claim alone does not isolate database rows. Tenant-aware schemas and queries require a separate design change. The prefix policy does not grant authority for real payments.
-
-Define bounded downstream failures, cancellation, correlated diagnostic outcomes, and durable denial auditing. Agree any persistent schema changes and retention before implementation. Do not automatically retry refunds: no idempotency contract exists.
-
-Acceptance: allowed flows succeed; invalid tokens fail; denied calls never reach a downstream spy; inbound tokens never reach the service; failures are sanitized and correlated; denial auditing is verified if implemented.
+The original workstream acceptance criteria are now covered locally: unfiltered authenticated discovery; signature/issuer/audience/lifetime/role/tenant validation; exact `-32001: Unauthorized Tool Call` with matching ID; zero downstream execution on denial; no bearer-token passthrough; service-credential protection; sanitized failures; cancellation without retries; and persistent denial records.
 
 ## 3. LLM Streaming Guardrails
 
@@ -122,4 +119,6 @@ Live agents are a separate candidate after gateway behavior is established. A bo
 
 The pre-phase service was exercised in the September 8 review. On September 11, local type checking, six tests, and the demo passed using Node 25.5.0 and installed dependencies. Remote CI and a fresh dependency installation were not verified.
 
-The inspected workspace has no Git metadata. No history was initialized, rewritten, or backdated. BridgeLayer is the approved documentation name; runtime identifiers retain SupportBridge naming for compatibility. Dates record the development phase and observed checks, not invented implementation dates or client outcomes.
+Git metadata was absent during the initial inspection but is now present. The Task 2 work does not initialize, rewrite, or backdate history. BridgeLayer remains the documentation name; runtime identifiers retain SupportBridge naming for compatibility.
+
+On September 15, 2026, type checking, 23 tests/subtests, and the HTTP SDK demo passed on Node 25.5.0 using installed dependencies. This is new-phase evidence, separate from the earlier six-test baseline. A fresh install, Node 24 execution, remote CI, and deployment remain unverified.

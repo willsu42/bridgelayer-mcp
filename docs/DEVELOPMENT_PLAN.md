@@ -2,9 +2,11 @@
 
 This backlog implements the planning structure approved for the phase beginning September 11, 2026. The initial sequencing window is September 11–24; dates are planning targets, not promises or records of daily work. [PROJECT_SCOPE.md](PROJECT_SCOPE.md) defines the bounded phase; [PROJECT_PLAN.md](PROJECT_PLAN.md) holds later workstreams.
 
-Documentation reconciliation is implemented. All engineering items below remain planned; approval of this backlog does not imply their code exists or settle material architecture decisions. Security acceptance tests accompany gateway development even though they appear under P2.
+Documentation reconciliation and Task 2 are implemented. Local verification on September 15, 2026 passed type checking, 23 tests/subtests, and the HTTP demo. The item statuses below distinguish delivered behavior from remaining environment validation. Security checks accompanied gateway development rather than being deferred.
 
 ## Inspection findings retained from the baseline review
+
+The table below is historical: it records the initial gaps before Task 2. HTTP authentication, gateway correlation, denial auditing, and full-restart evidence are now implemented. Tenant isolation, general lock-contention measurements, versioned customer migrations, and remote CI remain unverified or unimplemented.
 
 | Finding | Evidence / implication |
 | --- | --- |
@@ -36,7 +38,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ### D1. Agree the HTTP/security design
 
-- **Status:** Planned; first engineering discussion.
+- **Status:** Implemented design; choices documented in decisions.md and the Task 2 walkthrough.
 - **Task:** Specify the gateway/service boundary, HTTP sessions, downstream credentials/protection, token claims, errors, and audit decisions.
 - **Why it matters:** The reusable store is ready, but network trust and lifecycle rules are not defined by stdio.
 - **Existing baseline:** Customer handlers/store over stdio and an existing gateway roadmap.
@@ -46,7 +48,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ### D2. Add the HTTP service and gateway integration
 
-- **Status:** Planned; depends on D1.
+- **Status:** Implemented and locally tested September 15; D1 decisions are recorded.
 - **Task:** Add the customer HTTP MCP entry point, gateway plumbing, and harmless mock admin tool while retaining stdio.
 - **Why it matters:** Supplies the next API integration boundary using existing business logic.
 - **Existing baseline:** Two MCP tools, Zod schemas, SQLite store, and scripted stdio client.
@@ -58,7 +60,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ### D3. Prove persistence across a complete restart
 
-- **Status:** Planned; perform early, before extending service behavior.
+- **Status:** Implemented and tested; the original process stops before refund/audit verification after restart.
 - **Task:** Create a refund, stop the original server, restart on the same database, and inspect original refund/audit records.
 - **Why it matters:** Closes a specific persistence-evidence gap.
 - **Existing baseline:** On-disk SQLite, atomic writes, and checks performed while the original process remains alive.
@@ -68,7 +70,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ### D4. Implement and prove authentication/authorization
 
-- **Status:** Planned; implement with D2 after D1.
+- **Status:** Implemented and tested with D2; negative tests prove no forwarding after denial.
 - **Task:** Validate signed demo-token claims and enforce the planned `admin_` tool-execution policy.
 - **Why it matters:** HTTP exposure needs an explicit enforced trust boundary.
 - **Existing baseline:** No authentication; execution policy is documented only.
@@ -78,7 +80,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ### D5. Harden failures and observability
 
-- **Status:** Planned; relevant existing-log coverage can precede HTTP work.
+- **Status:** Implemented locally: failures/cancellation, gateway correlation, durations, and separate denial SQLite. Automated audit retention and broad SQLite capacity testing remain outside the delivered behavior.
 - **Task:** Define bounded downstream failure/cancellation behavior; add correlated outcomes/durations and malformed-envelope logging coverage. Agree durable denial-audit storage/retention before schema changes.
 - **Why it matters:** Diagnose failures without exposing sensitive values or replaying refund writes.
 - **Existing baseline:** Sanitized service errors, basic stderr logs, success-only database audits, and rollback tests.
@@ -90,7 +92,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ### D6. Deliver the local HTTP demo and operating guide
 
-- **Status:** Planned; depends on a tested gateway.
+- **Status:** Implemented demo/runbook; demo verified with installed dependencies. Fresh installation, Node 24, and remote CI validation remain open.
 - **Task:** Document and demonstrate allowed/denied flows, startup/configuration, storage, and shutdown.
 - **Why it matters:** Make the integration independently reproducible.
 - **Existing baseline:** Working stdio demo, npm commands, and VS Code child-process debugging.
@@ -100,7 +102,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ## Sequencing and deferred work
 
-Suggested order: D0 → D1 and D3 → D2 with D4 → D5 → D6. Prioritize design, baseline evidence, and gateway behavior in the first week; continue security/failure validation and demonstration in the second as capacity permits. Do not compress the acceptance checks to fit a date.
+The planned dependency order was D0 → D1/D3 → D2 with D4 → D5 → D6. These local behaviors are now delivered. Continue with code review and explaining the Task 2 request path, then address remaining environment checks or discuss Task 3. Do not infer later implementation from this backlog.
 
 The immediate data integration is SQLite, and the next API boundary is HTTP MCP. Streaming PII, token reservations/fallback, React, live agents, new external data vendors, and hosted deployment remain outside the initial delivery. A later read-only agent proposal should specify expected tool choices, invalid/missing customer cases, tool errors, and bounded execution before selecting a provider.
 
@@ -120,4 +122,10 @@ The approved documentation proposal resolves these discrepancies without changin
 
 No code-versus-doc conflict was found suggesting SQLite was absent, Python was the implementation language, or gateways were already running. The historical decision log retains the origin of the explicit error contract using FDE scenario wording.
 
-Local validation recorded September 11: type checking, six tests, and SDK demo passed on Node 25.5.0 / npm 11.8.0 using installed dependencies. No new application code was changed or new runtime tests claimed by this documentation reconciliation. No Git history was rewritten or initialized, and no historical timestamps were backdated.
+The September 11 documentation baseline recorded six passing tests and the stdio SDK demo; the documentation-only reconciliation did not add functionality. Task 2 subsequently added code and tests in this active phase, with current validation dated September 15. Git metadata is now available; this work has not initialized or rewritten history or backdated timestamps.
+
+## Task 2 evidence and remaining work
+
+See [02-http-gateway-walkthrough.md](02-http-gateway-walkthrough.md) for exact configuration/contracts and [http.test.ts](../tests/http.test.ts) for acceptance coverage. The new HTTP demo verifies discovery, lookup/refund, viewer denial, admin success, and missing-token rejection.
+
+Remaining work is explicitly separate: fresh-install/recommended-runtime/remote-CI verification; automated audit retention if required; general database contention evaluation; then design of Task 3. Tasks 3–4, UI, live agents, and hosted deployment are still planned or unselected.

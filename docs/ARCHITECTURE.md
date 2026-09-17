@@ -1,99 +1,81 @@
 # BridgeLayer — Architecture
 
-This document describes the inspected implementation and separately labels its extensions. The project was previously named SupportBridge; existing package, server, database configuration, and workspace identifiers retain that name. See [README](../README.md) for runnable commands, [PROJECT_SCOPE.md](PROJECT_SCOPE.md) for the active phase, and [PROJECT_PLAN.md](PROJECT_PLAN.md) for the long-term roadmap.
+Status at the Task 2 implementation, verified locally September 15, 2026. Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are implemented; no work is currently claimed as partially implemented. Later tasks remain planned.
 
-Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. “Partial” describes limits within an existing capability, not active development. No application component is currently in progress.
-
-## ✅ Existing: local MCP service
+## ✅ Existing request paths
 
 ```mermaid
 flowchart LR
-    C["Existing: scripted SDK client"]
-    subgraph P["Existing local server process — process access grants tool access"]
-        T["Existing: SDK stdio transport"]
-        H["Existing: MCP server and two tool handlers"]
-        V["Existing: Zod argument validation"]
-        S["Existing: customer store / business rules"]
-        L["Existing: JSON stderr diagnostics"]
-        T --> H --> V --> S
-        H --> L
-    end
-    C -->|stdin requests| T
-    T -->|stdout responses| C
-    S --> D[("Existing: local SQLite")]
+    C[HTTP MCP client] -->|JWT| G[Gateway]
+    G -->|service credential| H[Stateless customer HTTP transport]
+    H --> S[Customer handlers / validation / store]
+    X[Stdio MCP client] --> T[Stdio transport]
+    T --> S
+    S --> D[(Customer SQLite)]
+    G --> A[(Denial SQLite)]
+    G --> L[Structured stderr diagnostics]
+    S --> L
 ```
 
 | Component | Source | Responsibility |
 | --- | --- | --- |
-| Scripted MCP client | [demo.ts](../scripts/demo.ts) | Spawn the server, initialize, discover tools, and explicitly call lookup/refund paths; no LLM. |
-| Process entry point | [stdio.ts](../src/mcp/stdio.ts) | Construct store/server/transport, map framing errors, handle stdin end and shutdown signals. |
-| MCP server/tools | [server.ts](../src/mcp/server.ts) | Advertise `get_customer_record` and `trigger_refund`; validate, dispatch, and map results/errors. |
-| Argument schemas | [schemas.ts](../src/customer/schemas.ts) | Strict runtime input constraints and inferred TypeScript types. |
-| Customer store | [store.ts](../src/customer/store.ts) | Fictional customer lookup, whole-cent checks, SQLite schema/seeding, refund/audit transaction. |
-| Diagnostics | [logger.ts](../src/logger.ts) | Explicit JSON fields written to stderr. |
-| Integration tests | [mcp.test.ts](../tests/mcp.test.ts) | Real stdio process checks and direct non-JSON numeric validation. |
+| Customer schemas/store | [schemas.ts](../src/customer/schemas.ts), [store.ts](../src/customer/store.ts) | Strict arguments, fictional lookup, integer cents, atomic refund/success-audit writes. |
+| Customer server | [server.ts](../src/mcp/server.ts) | Tool discovery/dispatch and protocol/business errors. Two stdio tools; HTTP opts into a harmless third admin tool. |
+| Stdio entry point | [stdio.ts](../src/mcp/stdio.ts) | Existing process transport, framing, shutdown. |
+| HTTP entry point | [http.ts](../src/mcp/http.ts) | Service credential check; fresh SDK server/transport for each POST; JSON responses. |
+| Gateway | [server.ts](../src/gateway/server.ts) | Authenticate, authorize, forward with explicit headers, validate replies, bound/cancel failures, correlate logs. |
+| JWTs | [auth.ts](../src/gateway/auth.ts) | jose HS256 verification/issuance with constrained claims and 15-minute lifetime. |
+| Denial persistence | [audit.ts](../src/gateway/audit.ts) | Separate SQLite database with minimal authentication/authorization denial records. |
+| HTTP boundary | [common.ts](../src/http/common.ts) | Loopback listeners; Host/Origin, method/header, body-size, timeout, and envelope checks. |
+| Local launcher | [main.ts](../src/http/main.ts) | Starts gateway and protected service in one Node process; configured secrets/ports/storage; signal shutdown. |
+| Clients/tests | [demo-http.ts](../scripts/demo-http.ts), [http.test.ts](../tests/http.test.ts) | Official SDK clients, real HTTP tests, downstream spies and failure injection. |
 
-The server identifies itself as `supportbridge-customer`, version 0.1.0. Only MCP tools are advertised; resources and prompts are not registered. There is no HTTP listener, browser API, external customer API, payment integration, or model provider.
+The SDK owns MCP initialization, dispatch, framing/serialization, and response IDs. The pinned SDK is used without a protocol upgrade. The transports are stateless: no session identifier, SSE GET stream, or server-initiated interaction is supported. GET/DELETE return 405. Simultaneous clients may reuse request IDs because each POST has an independent transport.
 
-## ✅ Existing: one request and its boundaries
+## ✅ Existing HTTP trust boundaries
 
-1. The demo spawns a separate Node process. The SDK initializes MCP and carries newline-delimited messages through stdin/stdout.
-2. The handler selects the named tool and validates untrusted arguments with Zod.
-3. Validated input reaches the store. Lookup checks customer existence; refunds also enforce supported whole cents.
-4. Refund and success-audit inserts commit in one SQLite transaction. An audit insert failure rolls back the refund.
-5. The handler returns structured content plus JSON text, or maps an error. The SDK correlates the response with the request ID.
+The local launcher binds both endpoints to 127.0.0.1. It is one process with separate HTTP credentials/endpoints, not process isolation. Customer SQLite is shared fictional data; tenant claims do not isolate rows.
 
-Invalid arguments produce `-32602`; business failures return a tool result marked `isError: true`; unexpected service failures produce sanitized `-32603`. Unknown methods and framing behavior are documented in the [decision log](decisions.md). The pinned SDK's uncorrelatable framing-error envelope omits an ID.
+1. Validate the destination Host and any Origin; no cross-origin browser UI is exposed.
+2. Verify the caller's JWT before reading its body. Require signature, HS256/JWT type, issuer, audience, subject, issued-at, expiry, viewer/admin role, and a valid tenant identifier.
+3. Validate a single JSON-RPC message. Batches, fake session headers, unsupported versions, and oversized input fail before forwarding.
+4. Deny viewer calls whose tool name starts `admin_`; persist the denial and return exactly `-32001: Unauthorized Tool Call` with the same ID. A denied notification gets empty HTTP 202.
+5. Otherwise send the message to a fixed loopback service URL using a separate service credential. Do not forward bearer tokens, cookies, caller service keys, or redirects.
+6. The service requires that credential and invokes the existing business logic. A bearer token alone cannot bypass the gateway.
+7. Validate the downstream JSON-RPC envelope and matching ID; relay valid results, including unfiltered discovery.
 
-The current trust boundary is access to the local process and its database. Argument validation does not authenticate a caller or authorize an action. The database has no tenant column or tenant-filtered queries. Repeated valid refunds create separate receipts; request IDs provide correlation, not idempotency.
+JWT issuance is a local operator CLI, not a login/OAuth server. Anyone with the signing secret can issue admin tokens. Service and JWT secrets must differ. The admin policy protects only the prefix; viewers may execute simulated refunds. No real payment service exists.
 
-## ✅ Existing: persistence, diagnostics, and limits
+## ✅ Existing persistence and error handling
 
-SQLite persists `customers`, `refunds`, and successful-refund `audit_events`. It uses foreign keys, WAL, a three-second busy timeout, and synchronous calls. No throughput or multi-host capacity is established. Startup creates tables if absent; no versioned schema migration mechanism exists.
+Customer SQLite retains its original schema: customers, refunds, and successful-refund audit events. Refund/audit inserts commit together; an injected audit failure rolls them back. The full-restart test now proves original refund data and its linked audit survive stopping/restarting the server.
 
-The store casts customer rows to a TypeScript interface rather than validating database output at runtime. This relies on the controlled local schema. Imported data would need an agreed validation boundary.
+Gateway denials use a separate database/table, avoiding migration of the existing customer schema. Records contain an event ID, timestamp, request ID if available, and INVALID_CREDENTIALS/UNAUTHORIZED_TOOL. Tokens, subjects, tenants, tool arguments, records, and reasons are omitted. Audit failure blocks forwarding and returns a sanitized gateway error. No automatic audit deletion/retention policy or query API is implemented.
 
-Observability is **partial**: handled tool outcomes have timestamps, request IDs, tool names, and outcomes, but malformed call envelopes are parsed before the handler's logging `try` block. They therefore bypass correlated tool-outcome logging. No duration metric is recorded. Diagnostic call sites exclude customer records/refund reasons; reasons remain in the fictional database. Durable denied-attempt auditing does not exist.
+Invalid tool arguments still yield `-32602`; business failures use `isError: true`; unexpected customer exceptions yield sanitized `-32603`. Gateway authentication failures use HTTP 401. Downstream invalid/unavailable replies or audit failure use HTTP 502 / `-32002`; timeout uses HTTP 504 / `-32003`.
 
-The six tests cover real stdio behavior and transactional rollback. Current persistence checks inspect refund/audit rows while the original process runs and start another process for a seeded customer lookup. They do not yet prove the original refund/audit records survive a complete process stop/restart. Dedicated lock-contention and signal/error shutdown tests are also absent.
+Default bounds: 64 KiB input; three-second body read; 1 MiB downstream response; three-second downstream timeout. Client disconnection or gateway shutdown aborts outstanding downstream fetches. There are no retries. An abort or timeout cannot reverse a refund already committed; its result may be unknown to the caller.
 
-## 🚧 In Progress
+## ✅ Existing diagnostics and remaining limits
 
-No application implementation is in progress at this documentation baseline. Documentation reconciliation is complete; gateway and reliability work remain planned until code changes begin.
+Tool and gateway diagnostics include duration and outcome. Gateway logs preserve correlation for malformed tool-call envelopes rejected by the SDK before the customer handler; a malformed stdio call may still bypass the application tool logger. Stdout remains protocol-only for the stdio server. The token-issuance CLI explicitly writes a requested token to its stdout.
 
-## 🗓 Planned: next HTTP/security boundary
+SQLite calls are synchronous; long statements/busy waits can block the event loop. General multi-process lock-contention capacity, throughput, versioned customer-schema migrations, and tenant isolation are not implemented or measured. Database output still relies on the controlled schema and a TypeScript row assertion. No centralized tracing/metrics service or remote deployment is present.
 
-```mermaid
-flowchart LR
-    C["Planned: HTTP MCP client"]
-    G["Planned: gateway — authenticate and authorize"]
-    H["Planned: HTTP customer-service entry point"]
-    S["Existing: tool handlers and customer store"]
-    D[("Existing: shared fictional SQLite data")]
-    C -.->|bearer token / HTTP MCP| G
-    G -.->|separate downstream trust boundary| H
-    H -.-> S
-    S --> D
-```
+## 🗓 Planned later components
 
-Dashed edges represent unimplemented connections. The proposed gateway will verify signed demo-token claims and enforce execution policy while forwarding authenticated discovery unfiltered. A harmless mock `admin_` tool is planned, not present.
+| Component | Intended role |
+| --- | --- |
+| Task 3: LLM streaming guardrail | Byte/event/text boundaries, bounded ambiguity buffers, deterministic redaction tests and measurements. |
+| Task 4: token limiter/model fallback | Tenant usage reservations/reconciliation, concurrent admissions, provider attempt/fallback policy. Existing SQLite is infrastructure only; no budget tables exist. |
+| Provider adapters | Start with deterministic mocks; live provider/model undecided. |
+| React console/application backend | Exercise implemented backend behavior. No UI exists today. |
+| Autonomous agent / external customer APIs / hosting | Separate extension candidates; no selected vendor or implementation. |
 
-Non-admin `admin_` calls must return `-32001: Unauthorized Tool Call` with the request ID intact and never execute downstream. The inbound bearer token must not be forwarded. HTTP/session handling, downstream credentials/protection against bypass, authentication-error mapping, cancellation, and denial-audit storage need design agreement.
+Detailed future behavior is in [PROJECT_PLAN.md](PROJECT_PLAN.md). Current configuration and a request-by-request explanation are in the [HTTP walkthrough](02-http-gateway-walkthrough.md).
 
-The initial scoped dataset remains shared and fictional. Verified tenant identity will not imply customer-data isolation. The prefix policy does not establish real-refund authority. Preserve stdio and do not automatically replay refund calls on network failure.
+## Validation and chronology
 
-## 🗓 Planned: later AI and console components
+Task 1 and the earlier learning documents predate September 11. Documentation reconciliation and Task 2 belong to the active phase beginning September 11. On September 15, type checking, 23 tests/subtests, and the HTTP demo passed locally on Node 25.5.0. Recommended Node 24, a fresh dependency installation, remote CI, and hosted performance have not been verified by those checks.
 
-| Component | Status | Intended boundary |
-| --- | --- | --- |
-| Application backend / React console | 🗓 Planned | Exercise actual gateway behavior; no UI exists today. |
-| LLM gateway / provider adapters | 🗓 Planned | Begin with deterministic mocks; live provider/model undecided. |
-| Streaming PII guardrail | 🗓 Planned | Decode bytes, parse provider events, inspect incremental text before forwarding safe output. |
-| Token reservation / model router | 🗓 Planned | Authenticate tenant identity, reserve/reconcile usage, control fallback before output is committed. |
-| Budget persistence | 🗓 Planned | Reuse SQLite infrastructure with new schema/transactions; no budget tables exist. |
-
-A live autonomous agent and external customer APIs are separate extension candidates, with no implementation or selected vendor. A future agent would choose tools; today's client explicitly calls them. Detailed streaming, budget, and fallback requirements remain in [PROJECT_PLAN.md](PROJECT_PLAN.md).
-
-## Evidence
-
-The architecture reflects the prior source inspection and the baseline locally validated on September 11, 2026: type checking, six tests, and the scripted demo passed on Node 25.5.0. The documentation update changes no application behavior. Remote CI, deployment, concurrency capacity, and AI evaluations remain unverified.
+Git metadata, absent during the earlier inspection, is now present; no history was rewritten. Runtime identifiers retain their existing SupportBridge names as documented in [README](../README.md).

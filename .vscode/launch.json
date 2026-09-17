@@ -11,5 +11,15 @@
     "autoAttachChildProcesses": true,
     "console": "integratedTerminal",
     "skipFiles": ["<node_internals>/**"]
+  }, {
+    "name": "Debug HTTP gateway demo",
+    "type": "node",
+    "request": "launch",
+    "program": "${workspaceFolder}/dist/scripts/demo-http.js",
+    "cwd": "${workspaceFolder}",
+    "preLaunchTask": "Build",
+    "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+    "console": "integratedTerminal",
+    "skipFiles": ["<node_internals>/**"]
   }]
 }

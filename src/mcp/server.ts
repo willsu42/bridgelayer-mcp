@@ -53,8 +53,8 @@ export function createCustomerServer(store: CustomerStore, options: { adminTool?
     return { tools: availableTools };
   });
 
-  // Keep the registration envelope permissive so malformed params reach the SDK's
-  // tools/call validator, which maps them to InvalidParams instead of an internal error.
+  // The SDK validates the call envelope before our handler. The gateway logs
+  // correlated failures that the SDK rejects before reaching this callback.
   server.setRequestHandler(z.object({ method: z.literal('tools/call'), params: z.unknown().optional() }), (request, extra) => {
     const started = performance.now();
     let tool: 'get_customer_record' | 'trigger_refund' | 'admin_health_check' | 'unknown' = 'unknown';
@@ -64,8 +64,8 @@ export function createCustomerServer(store: CustomerStore, options: { adminTool?
     });
     try {
       const params = parse(CallToolRequestSchema, request).params;
-      tool = params.name === 'get_customer_record' || params.name === 'trigger_refund' ||
-        (options.adminTool && params.name === 'admin_health_check') ? params.name as typeof tool : 'unknown';
+      if (params.name === 'get_customer_record' || params.name === 'trigger_refund') tool = params.name;
+      else if (options.adminTool && params.name === 'admin_health_check') tool = params.name;
       let value: Record<string, unknown>;
       switch (params.name) {
         case 'get_customer_record': {

@@ -109,7 +109,9 @@ Small exercise: predict the outcome for amount `0`, amount `"12.50"`, amount `0.
 
 “I built a customer MCP server using the official TypeScript SDK. It exposes lookup and simulated-refund tools. Zod validates external arguments before business logic runs, and I use a lower-level SDK API to preserve the original FDE scenario's JSON-RPC validation-error contract. The SDK still handles protocol initialization and transport serialization.
 
-“Refunds are stored as integer cents in SQLite, and each successful refund and its audit event commit in one transaction. I tested the real stdio process, including invalid requests and an injected database failure. The current implementation is a local simulation; HTTP authorization and the LLM gateway are upcoming milestones.”
+“Refunds are stored as integer cents in SQLite, and each successful refund and its audit event commit in one transaction. I tested the real stdio process, including invalid requests and an injected database failure. This is a local simulation. Task 2 now adds authenticated HTTP access; LLM workflows remain planned.”
+
+Continue with the [Task 2 HTTP walkthrough](02-http-gateway-walkthrough.md) for gateway authorization, token boundaries, cancellation, and denial auditing.
 
 Do not claim production deployment, latency improvements, or concurrency capacity until we actually implement and measure those properties.
 

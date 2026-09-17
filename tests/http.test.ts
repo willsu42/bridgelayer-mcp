@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { test, type TestContext } from 'node:test';
 import { once } from 'node:events';
+import { request as httpRequest } from 'node:http';
 import { SignJWT } from 'jose';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -140,8 +141,17 @@ test('service bypass, Host/Origin, methods, oversized bodies, malformed frames, 
   assert.equal((await fetch(s.customer.url, { method: 'POST', headers, body: JSON.stringify(call('admin_health_check')) })).status, 401);
   assert.equal((await fetch(s.customer.url, { method: 'POST', headers: { ...headers, authorization: `Bearer ${s.admin}` }, body: JSON.stringify(call('admin_health_check')) })).status, 401);
   const before = s.forwarded();
+  // fetch normalizes Host; use the actual wire header for the rebinding check.
+  const forgedHostStatus = await new Promise<number | undefined>((resolve, reject) => {
+    const req = httpRequest(s.gateway.url, {
+      method: 'POST', headers: { ...headers, host: 'evil.example', authorization: `Bearer ${s.admin}` },
+    }, res => { res.resume(); res.once('end', () => resolve(res.statusCode)); });
+    req.once('error', reject);
+    req.end(JSON.stringify(call('admin_health_check')));
+  });
+  assert.equal(forgedHostStatus, 403);
   for (const [extra, status] of [
-    [{ origin: 'https://evil.example' }, 403], [{ host: 'evil.example' }, 403],
+    [{ origin: 'https://evil.example' }, 403],
     [{ 'mcp-session-id': 'forged' }, 400], [{ 'content-type': 'text/plain' }, 415],
     [{ accept: 'text/html' }, 406], [{ 'mcp-protocol-version': 'unsupported' }, 400],
   ] as const) assert.equal((await s.post(call('admin_health_check'), s.admin, extra)).status, status);
