@@ -4,6 +4,8 @@ Task 2 adds a local HTTP MCP service and security gateway to the existing stdio 
 
 ## Run the demonstration
 
+Activate Node 24 first and confirm `node --version` reports `v24.x`.
+
 ```sh
 npm ci
 npm run check
@@ -104,6 +106,8 @@ Stop with Ctrl+C or SIGTERM. No environment-file loader is installed; set variab
 ## Validation evidence
 
 The HTTP tests use real loopback listeners and official SDK clients, plus controlled downstream spies/failures. They cover discovery, token claims, service bypass, no credential passthrough, zero downstream denials, audit persistence/failure, hostile headers, malformed/batched/oversize input, concurrent duplicate IDs, invalid downstream replies, timeout, disconnection, shutdown, and log privacy. The existing stdio suite additionally verifies original refund/audit rows after a complete process restart.
+
+Task 2 acceptance was closed on October 27, 2026: clean installation on Node 24.22.1, type checking, all 23 tests/subtests, and both demos passed; the existing remote Node 22/24 CI results for `a744bfd` were confirmed successful. See [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md) for exact conditions and CI links.
 
 The checks validate local behavior, not hosted operation, tenant isolation, rate-limiter concurrency, or an AI workflow.
 

@@ -70,7 +70,7 @@ Repository pins: TypeScript `7.0.2`, MCP SDK `1.30.0`, Zod `4.5.4`, and `jose` `
 
 ## Setup
 
-Use Node 24 (`.nvmrc`); the package minimum is Node 22.13.0.
+Use Node 24 (`.nvmrc`); the package minimum is Node 22.13.0. Confirm `node --version` reports `v24.x` before installing dependencies.
 
 ```sh
 npm ci
@@ -99,9 +99,9 @@ On **September 15, 2026**, local type checking and **23 tests/subtests** passed 
 
 HTTP coverage includes token validation, direct-service rejection, zero downstream calls after denial, durable denial records, audit failure, Origin/Host checks, invalid/batched/oversize input, credential separation, concurrent identical request IDs, downstream reply validation, timeout, disconnect/shutdown cancellation, and log privacy.
 
-These runs used installed dependencies. A fresh `npm ci`, recommended Node 24 run, and remote Node 22/24 CI matrix are not yet verified. Node may emit a SQLite warning on stderr without breaking protocol behavior.
+Those September runs used installed dependencies. On **October 27, 2026 (Asia/Taipei)**, a clean dependency installation on Node **24.22.1** / npm **11.19.1**, type checking, all **23 tests/subtests**, and both HTTP/stdio demos passed. The existing [Node 22/24 CI run](https://github.com/willsu42/bridgelayer-mcp/actions/runs/35180116876) for `a744bfd` was also confirmed successful. See the [Task 2 closeout](docs/TASK2_CLOSEOUT.md) for exact installation conditions and evidence. Node may emit a SQLite warning on stderr without breaking protocol behavior.
 
-Final recheck on September 16 (America/Chicago): type checking and all 23 tests/subtests passed again after request-cleanup changes; the original stdio demo also completed.
+Earlier recheck on September 16 (America/Chicago): type checking and all 23 tests/subtests passed again after request-cleanup changes; the original stdio demo also completed.
 
 | Failure | Existing response |
 | --- | --- |
@@ -117,14 +117,14 @@ See the [decision log](docs/decisions.md) for pinned SDK framing/error details a
 
 ## Current development status
 
-Task 1 predates September 11. Scope/documentation reconciliation belongs to the new phase; Task 2 and the restart regression were implemented and validated in this phase, with current verification dated September 15. Git history has not been rewritten.
+Task 1 predates September 11. Scope/documentation reconciliation belongs to the new phase; Task 2 and the restart regression were implemented and validated in this phase, with final scope acceptance and environment verification completed October 27, 2026. Git history has not been rewritten.
 
 Limits: fictional records are shared, without tenant data isolation. Viewers can create simulated refunds; the admin-prefix rule is not real-payment authorization. Requests are never automatically retried; aborting a timeout cannot undo a committed refund. Denial auditing has no automated retention policy. There is no hosted deployment, measured production capacity, streaming guardrail, token budget, or AI workflow.
 
 ## Roadmap and learning
 
 1. Task 1 — implemented; retain stdio compatibility.
-2. Task 2 — implemented locally; HTTP/security behavior and demonstrations are tested.
+2. Task 2 — complete within the local gateway scope; clean-install/Node 24 checks, demos, and remote Node 22/24 CI are verified.
 3. Task 3 — planned streaming PII guardrails.
 4. Task 4 — planned token budgets/model fallback.
 

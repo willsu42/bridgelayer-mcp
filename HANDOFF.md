@@ -4,20 +4,21 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Context for the next session
 
-> Read README.md, docs/PROJECT_SCOPE.md, docs/PROJECT_PLAN.md, docs/ARCHITECTURE.md, docs/DEVELOPMENT_PLAN.md, docs/decisions.md, and docs/02-http-gateway-walkthrough.md. Continue from the completed inspection and Task 2 implementation; do not restart analysis from scratch. Task 1's stdio server, two customer tools, SQLite, and initial tests/demo predate September 11. Task 2's HTTP service/security gateway, denial auditing, and restart regression were added during the active phase and locally verified September 15. Tasks 3–4, UI, and all LLM/agent functionality remain planned. Walk through the gateway trust boundaries and failure cases before proposing the next milestone. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and inspect code with me in VS Code. Follow explain → agree → implement → demonstrate → practice explaining back.
+> Read README.md, docs/PROJECT_SCOPE.md, docs/PROJECT_PLAN.md, docs/ARCHITECTURE.md, docs/DEVELOPMENT_PLAN.md, docs/decisions.md, and docs/02-http-gateway-walkthrough.md. Continue from the completed inspection and Task 2 implementation; do not restart analysis from scratch. Task 1's stdio server, two customer tools, SQLite, and initial tests/demo predate September 11. Task 2's HTTP service/security gateway, denial auditing, and restart regression were added during the active phase and locally verified September 15. Task 2 closeout on October 27 verified a clean Node 24 install, all 23 tests/subtests, both demos, and the existing remote Node 22/24 CI results; read docs/TASK2_CLOSEOUT.md. Tasks 3–4, UI, and all LLM/agent functionality remain planned. Walk through the gateway trust boundaries and failure cases before proposing the next milestone. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and inspect code with me in VS Code. Follow explain → agree → implement → demonstrate → practice explaining back.
 
 ## Current evidence and limits
 
 - September 11, 2026: `npm run check` passed strict type checking and all six tests; the SDK demo completed discovery, lookup, simulated refund, and invalid-amount rejection.
-- That run used installed dependencies and Node 25.5.0 / npm 11.8.0. Node 24 is the recommended project runtime; remote Node 22/24 CI execution is unverified.
+- That run used installed dependencies and Node 25.5.0 / npm 11.8.0. Node 24 is the recommended project runtime; remote Node 22/24 CI execution was unverified at that time.
 - Documentation/name reconciliation was followed by Task 2 implementation. September 15: type checking, 23 tests/subtests, and the HTTP SDK-client demo passed locally on Node 25.5.0.
 - Git metadata was absent in the initial inspection and is now present. Task 2 has not rewritten or backdated history.
 - Earlier handoff statements about no remote repository, API keys, or hosting were historical session context. Current evidence establishes no application use of external credentials, no live client/payment/LLM integration, and no verified deployment; it does not establish external account state.
 - All customer records are fictional and refunds are simulated. No actual client engagement is evidenced.
+- October 27, 2026 (Asia/Taipei): Task 2 acceptance is complete. Node 24.22.1 / npm 11.19.1 clean installation, type checking, 23 tests/subtests, and both demos passed. Existing CI for `a744bfd` passed on Node 22 and 24. See [closeout evidence](docs/TASK2_CLOSEOUT.md), including the temporary runtime and cached-install conditions.
 
 ## Next work
 
-Run `npm run demo:http` and inspect the [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). Explain why discovery is unfiltered, denied calls never execute downstream, credentials differ, and a timed-out refund must not be retried automatically. Review the completed items and remaining environment checks in the [backlog](docs/DEVELOPMENT_PLAN.md) before discussing Task 3. Shared fictional customers still have no tenant isolation.
+Run `npm run demo:http` and inspect the [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). Explain why discovery is unfiltered, denied calls never execute downstream, credentials differ, and a timed-out refund must not be retried automatically. Task 2 environment checks are closed; review the [closeout](docs/TASK2_CLOSEOUT.md) and agree Task 3 design/acceptance before implementation. Shared fictional customers still have no tenant isolation.
 
 ## Files to inspect during implementation
 

@@ -1,6 +1,6 @@
 # BridgeLayer — Architecture
 
-Status at the Task 2 implementation, verified locally September 15, 2026. Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are implemented; no work is currently claimed as partially implemented. Later tasks remain planned.
+Status after Task 2 closeout, October 27, 2026; see [verification evidence](TASK2_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are implemented; no work is currently claimed as partially implemented. Later tasks remain planned.
 
 ## ✅ Existing request paths
 
@@ -76,6 +76,6 @@ Detailed future behavior is in [PROJECT_PLAN.md](PROJECT_PLAN.md). Current confi
 
 ## Validation and chronology
 
-Task 1 and the earlier learning documents predate September 11. Documentation reconciliation and Task 2 belong to the active phase beginning September 11. On September 15, type checking, 23 tests/subtests, and the HTTP demo passed locally on Node 25.5.0. Recommended Node 24, a fresh dependency installation, remote CI, and hosted performance have not been verified by those checks.
+Task 1 and the earlier learning documents predate September 11. Documentation reconciliation and Task 2 belong to the active phase beginning September 11. On September 15, type checking, 23 tests/subtests, and the HTTP demo passed locally on Node 25.5.0. Those September checks did not verify the recommended runtime or clean installation. The [October 27 closeout](TASK2_CLOSEOUT.md) verifies clean installation on Node 24.22.1, all 23 tests/subtests, both demos, and existing remote Node 22/24 CI results. Hosted performance remains unverified.
 
 Git metadata, absent during the earlier inspection, is now present; no history was rewritten. Runtime identifiers retain their existing SupportBridge names as documented in [README](../README.md).

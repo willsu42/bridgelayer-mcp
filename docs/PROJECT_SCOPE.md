@@ -25,11 +25,11 @@ Before this phase, the prototype already had:
 - On-disk SQLite with fictional customer seeds, integer-cent refunds, and atomic refund/success-audit writes.
 - Structured stderr diagnostics, with the coverage gaps described in the architecture.
 - Six automated tests, an official SDK-client demo, VS Code debugging, and technical/learning documentation.
-- A Node 22/24 CI workflow definition; remote execution is unverified.
+- A Node 22/24 CI workflow definition; remote execution was unverified in the baseline review.
 
 This attribution is based on the developer's statement and the September 8 inspection recorded in the accompanying conversation. Git metadata was absent in the initial inspection; it is now present. The earlier evidence limitation is retained as history, and no historical commits or timestamps are rewritten or backdated by this work.
 
-The September 11 phase has added scope/backlog documentation, the BridgeLayer documentation name, Task 2's HTTP/security gateway, and stronger restart validation. Task 2 was locally validated on September 15, 2026. No AI implementation has been added.
+The September 11 phase has added scope/backlog documentation, the BridgeLayer documentation name, Task 2's HTTP/security gateway, and stronger restart validation. Task 2 was locally validated on September 15, 2026 and closed out on October 27 with clean-install/Node 24 checks, both demos, and verified remote Node 22/24 CI results. No AI implementation has been added.
 
 ## Current Development Objectives
 
@@ -67,7 +67,7 @@ Detailed later workstreams belong in [PROJECT_PLAN.md](PROJECT_PLAN.md), not thi
 | HTTP service and gateway | Implemented and tested | HTTP initialization, discovery, lookup, and simulated refund work; stdio checks remain green. |
 | Authentication/authorization evidence | Implemented and tested | Invalid tokens fail; exact admin denial preserves ID; allowed calls work; spies prove zero downstream denial execution and no inbound bearer passthrough. |
 | Failure handling and observability | Implemented and tested locally | Invalid replies/timeouts/disconnects/shutdown are covered; no retries; gateway logs have correlation/duration and omit sensitive fields. |
-| Local demonstration/runbook | Implemented; demo verified with installed dependencies | Official-client demo reproduces allowed/denied paths; configuration/lifecycle documented. Fresh installation and Node 24 validation remain open. |
+| Local demonstration/runbook | Complete; clean installation and Node 24 verified October 27 | Official-client demo reproduces allowed/denied paths; configuration/lifecycle documented. Both demos and 23 tests/subtests pass; see [closeout](TASK2_CLOSEOUT.md). |
 
 Security tests accompany gateway implementation. A design approval or documentation update alone does not change any planned row to implemented.
 
@@ -81,7 +81,7 @@ Both request paths exist: scripted client → stdio → customer handlers/store,
 
 On September 11, 2026, `npm run check` passed strict type checking and all six tests; `npm run demo` completed discovery, lookup, a simulated 1250-cent refund, and invalid-amount rejection. This used installed dependencies on Node 25.5.0 / npm 11.8.0. SQLite's experimental warning appeared on stderr without breaking protocol checks.
 
-Those checks preceded Task 2 and remain historical baseline evidence. On September 15, type checking, 23 tests/subtests, and the HTTP demo passed locally on Node 25.5.0. The full-restart regression is now included. A fresh install, Node 24 run, remote CI, production performance, and AI evaluations remain unverified.
+Those checks preceded Task 2 and remain historical baseline evidence. On September 15, type checking, 23 tests/subtests, and the HTTP demo passed locally on Node 25.5.0. The full-restart regression is now included. The [October 27 closeout](TASK2_CLOSEOUT.md) adds clean installation on Node 24.22.1, all 23 passing tests/subtests, both demos, and verified existing remote Node 22/24 CI results. Production performance and AI evaluations remain unverified.
 
 ## Milestones
 
@@ -90,8 +90,8 @@ Those checks preceded Task 2 and remain historical baseline evidence. On Septemb
 | M0 — Documentation baseline | Implemented documentation | Approved naming and status reconciliation, coherent document roles, verified local references. |
 | M1 — Design and regression evidence | Implemented | Design recorded and full-restart test passes. |
 | M2 — HTTP/security integration | Implemented locally | Service/gateway and allow/deny checks pass alongside stdio regressions. |
-| M3 — Hardening and demonstration | Implemented locally; environment validation remains | Failure/logging criteria and HTTP demo pass; clean-install/Node 24/remote CI evidence remains open. |
+| M3 — Hardening and demonstration | Complete October 27, 2026 | Failure/logging criteria and both demos pass; clean-install/Node 24/remote CI evidence recorded in [closeout](TASK2_CLOSEOUT.md). |
 
-The initial September 11–24 planning window remains historical context, not a record of daily work or promised completion. The [development backlog](DEVELOPMENT_PLAN.md) distinguishes completed Task 2 behavior from remaining environment and operational validation.
+The initial September 11–24 planning window remains historical context, not a record of daily work or promised completion. The [development backlog](DEVELOPMENT_PLAN.md) distinguishes completed Task 2 acceptance from future operational improvements.
 
 Development continues through explain → agree → implement → demonstrate → practice explaining back in VS Code. Next, review the Task 2 request path and practice explaining its trust boundaries before designing Task 3.

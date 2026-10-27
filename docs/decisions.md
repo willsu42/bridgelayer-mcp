@@ -24,7 +24,7 @@ The original FDE integration scenario provides no order ID or idempotency key. E
 
 ## SQLite and privacy
 
-Use built-in `node:sqlite` to avoid a native third-party database dependency. This API can emit an experimental warning on stderr; code was tested locally on Node 25.5.0, with Node 22/24 CI configured but remote execution unverified. Keep synchronous transactions short. WAL and a busy timeout are configured; this milestone makes no throughput claim.
+Use built-in `node:sqlite` to avoid a native third-party database dependency. This API can emit an experimental warning on stderr; code was tested locally on Node 25.5.0, with Node 22/24 CI configured but remote execution unverified at that time (subsequently verified in the October 27 closeout). Keep synchronous transactions short. WAL and a busy timeout are configured; this milestone makes no throughput claim.
 
 Refund creation and its success audit event are atomic. Refund reasons are stored in the fictional demo database but excluded from diagnostic logs and returned receipts. Handled tool outcomes go to stderr. The gateway now correlates malformed-envelope errors even when the SDK rejects a call before the customer handler; stdio retains that diagnostic limitation. Task 2 adds a separate durable denial database as described below.
 
@@ -51,8 +51,12 @@ The implemented HTTP scenario retains shared fictional customer records and make
 - **Diagnostics:** gateway requests and handled customer calls record outcomes/durations without secret fields. Gateway logs cover malformed tool calls even when the SDK rejects them before the customer handler.
 - **Strict typing:** the pinned SDK declares optional fields inconsistently between its HTTP transport classes and Transport interface. Localized assertions bridge those compatible SDK types; project-wide strict compiler flags are retained.
 
-Verification on September 15 passed type checking, 23 tests/subtests, and the HTTP SDK-client demo on Node 25.5.0. The stdio persistence test now stops the original process and verifies its refund/audit records after restart. Token failures, denied execution, credential boundaries, malformed traffic, concurrency of request IDs, audits, sanitized failures, timeout, disconnect, and shutdown are exercised over real loopback HTTP. Fresh installation, Node 24 execution, remote CI, hosted deployment, and broader SQLite throughput remain unverified.
+Verification on September 15 passed type checking, 23 tests/subtests, and the HTTP SDK-client demo on Node 25.5.0. The stdio persistence test now stops the original process and verifies its refund/audit records after restart. Token failures, denied execution, credential boundaries, malformed traffic, concurrency of request IDs, audits, sanitized failures, timeout, disconnect, and shutdown are exercised over real loopback HTTP. At that time, fresh installation, Node 24 execution, remote CI, hosted deployment, and broader SQLite throughput were unverified.
 
 The earlier lack of Git metadata was an inspection limitation at that time. Git metadata is now available; this implementation has not rewritten or backdated commits.
 
-Final recheck on September 16 (America/Chicago) passed type checking, all 23 tests/subtests, and the original stdio demo after the last request-cleanup adjustment. The HTTP demo had already completed on September 15. Fresh-install/recommended-runtime/remote-CI checks remain explicitly unverified.
+Final recheck on September 16 (America/Chicago) passed type checking, all 23 tests/subtests, and the original stdio demo after the last request-cleanup adjustment. The HTTP demo had already completed on September 15. Fresh-install/recommended-runtime/remote-CI checks were still unverified at that September recheck.
+
+## Task 2 closeout — October 27, 2026
+
+Clean installation on Node 24.22.1 / npm 11.19.1, type checking, all 23 tests/subtests, and both HTTP/stdio demos passed. The existing GitHub CI run for `a744bfd` succeeded on Node 22 and 24; its results were inspected today, not rerun. [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md) records exact installation conditions, runtime verification, CI links, and scope boundaries. Task 2 acceptance is complete; no application code or dependency pins changed. Automated retention, database capacity, hosting, and Tasks 3–4 remain separate work.

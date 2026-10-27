@@ -11,7 +11,7 @@ The four workstreams remain appropriate to the current architecture. Phase commi
 - **Missing:** absent and not committed as an implementation milestone.
 - **Planned:** documented future functionality with no implementation.
 
-“In Progress” below identifies ongoing work, not intentions. Task 2 is now implemented and locally tested, with verification dated September 15, 2026. No later workstream has started.
+“In Progress” below identifies ongoing work, not intentions. Task 2 is complete, including environment verification and remote CI evidence recorded in the [October 27 closeout](TASK2_CLOSEOUT.md). No later workstream has started.
 
 ## Documentation status matrix
 
@@ -25,12 +25,12 @@ Pre-September 11 attribution uses the developer's statement and September 8 insp
 | Zod validation / error mapping | Implemented | Yes | Preserve contracts | HTTP boundary tests |
 | SQLite and atomic refund/audit writes | Implemented | Yes | Full-restart regression added | — |
 | Separate SQLite denial audit | Implemented | No | Added with Task 2 | Automated retention not implemented |
-| Scripted SDK client | Implemented | Yes | Extend demo later | HTTP allowed/denied flows |
+| Scripted SDK client | Implemented | Yes | HTTP allowed/denied demo verified | — |
 | Six original stdio tests | Implemented | Yes | Restart coverage strengthened | — |
-| HTTP integration/failure tests | Implemented | No | 23 total tests/subtests now pass locally | Additional environment validation |
+| HTTP integration/failure tests | Implemented | No | 23 total tests/subtests pass on Node 24; remote Node 22/24 CI verified | — |
 | Logging / observability | Partial | Basic logs: yes | Gateway correlation/durations and denial audit added | Centralized metrics not implemented |
-| Node 22/24 CI workflow definition | Implemented | Yes | Verify when runnable | — |
-| Verified remote CI results | Missing | Not established | Record actual results | — |
+| Node 22/24 CI workflow definition | Implemented | Yes | Both jobs verified successful for a744bfd | — |
+| Verified remote CI results | Implemented evidence | Not established | Successful existing run inspected October 27; see closeout | — |
 | HTTP security gateway / authentication | Implemented | No | Signed demo tokens, role policy, separate downstream credentials | Production OAuth outside current scope |
 | Streaming PII guardrail | Planned | No | Later phase | Incremental stream inspection |
 | Token limiter / model fallback | Planned | No | Later phase | Reservations and routing |
@@ -55,7 +55,7 @@ No additional work is in progress. Task 2 has added HTTP access and a full-resta
 
 Continue maintaining the service. The HTTP entry point, original-record restart regression, and gateway logging/failure coverage are now implemented. Broader SQLite lock-contention measurement and imported-data validation remain future improvements; no external CRM or ticketing vendor is selected.
 
-Acceptance: existing tests remain green; original refund/audit records survive restart; an HTTP client can initialize, discover, and call the existing tools once the new entry point is implemented.
+Acceptance: existing tests remain green; original refund/audit records survive restart; an HTTP client initializes, discovers, and calls the tools through the implemented gateway.
 
 ## 2. MCP Security Gateway
 
@@ -69,7 +69,7 @@ None. Implementation and local acceptance checks are complete; see the [Task 2 w
 
 ### Planned
 
-Further environment validation and operational hardening may follow: recommended Node 24, clean dependency installation, remote CI, and an explicit automated audit-retention policy. Full OAuth, tenant-aware customer data, real-payment authority, and hosted operation remain outside this implementation.
+Clean dependency installation, recommended Node 24 execution, and remote Node 22/24 CI are verified in the [closeout](TASK2_CLOSEOUT.md). An explicit automated audit-retention policy remains a possible operational follow-up. Full OAuth, tenant-aware customer data, real-payment authority, and hosted operation remain outside this implementation.
 
 The original workstream acceptance criteria are now covered locally: unfiltered authenticated discovery; signature/issuer/audience/lifetime/role/tenant validation; exact `-32001: Unauthorized Tool Call` with matching ID; zero downstream execution on denial; no bearer-token passthrough; service-credential protection; sanitized failures; cancellation without retries; and persistent denial records.
 
@@ -121,4 +121,4 @@ The pre-phase service was exercised in the September 8 review. On September 11, 
 
 Git metadata was absent during the initial inspection but is now present. The Task 2 work does not initialize, rewrite, or backdate history. BridgeLayer remains the documentation name; runtime identifiers retain SupportBridge naming for compatibility.
 
-On September 15, 2026, type checking, 23 tests/subtests, and the HTTP SDK demo passed on Node 25.5.0 using installed dependencies. This is new-phase evidence, separate from the earlier six-test baseline. A fresh install, Node 24 execution, remote CI, and deployment remain unverified.
+On September 15, 2026, type checking, 23 tests/subtests, and the HTTP SDK demo passed on Node 25.5.0 using installed dependencies. This is new-phase evidence, separate from the earlier six-test baseline. Fresh installation, Node 24 execution, and remote CI were unverified at that time; the [October 27 closeout](TASK2_CLOSEOUT.md) resolves those checks. Deployment remains unverified.

@@ -2,11 +2,11 @@
 
 This backlog implements the planning structure approved for the phase beginning September 11, 2026. The initial sequencing window is September 11–24; dates are planning targets, not promises or records of daily work. [PROJECT_SCOPE.md](PROJECT_SCOPE.md) defines the bounded phase; [PROJECT_PLAN.md](PROJECT_PLAN.md) holds later workstreams.
 
-Documentation reconciliation and Task 2 are implemented. Local verification on September 15, 2026 passed type checking, 23 tests/subtests, and the HTTP demo. The item statuses below distinguish delivered behavior from remaining environment validation. Security checks accompanied gateway development rather than being deferred.
+Documentation reconciliation and Task 2 are implemented. Local verification on September 15, 2026 passed type checking, 23 tests/subtests, and the HTTP demo. The [October 27 closeout](TASK2_CLOSEOUT.md) completes clean-install/Node 24 checks, both demos, and verification of the existing remote Node 22/24 CI results. All D0–D6 acceptance items are complete. Security checks accompanied gateway development rather than being deferred.
 
 ## Inspection findings retained from the baseline review
 
-The table below is historical: it records the initial gaps before Task 2. HTTP authentication, gateway correlation, denial auditing, and full-restart evidence are now implemented. Tenant isolation, general lock-contention measurements, versioned customer migrations, and remote CI remain unverified or unimplemented.
+The table below is historical: it records the initial gaps before Task 2. HTTP authentication, gateway correlation, denial auditing, and full-restart evidence are now implemented. Tenant isolation, general lock-contention measurements, and versioned customer migrations remain unverified or unimplemented. Remote CI is now verified; see the closeout.
 
 | Finding | Evidence / implication |
 | --- | --- |
@@ -92,7 +92,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ### D6. Deliver the local HTTP demo and operating guide
 
-- **Status:** Implemented demo/runbook; demo verified with installed dependencies. Fresh installation, Node 24, and remote CI validation remain open.
+- **Status:** Complete October 27, 2026: clean installation on Node 24.22.1, all 23 tests/subtests, both demos, and existing remote Node 22/24 CI verified. See [closeout evidence](TASK2_CLOSEOUT.md).
 - **Task:** Document and demonstrate allowed/denied flows, startup/configuration, storage, and shutdown.
 - **Why it matters:** Make the integration independently reproducible.
 - **Existing baseline:** Working stdio demo, npm commands, and VS Code child-process debugging.
@@ -102,7 +102,7 @@ No TODO/FIXME/HACK markers were found in application/test source during the init
 
 ## Sequencing and deferred work
 
-The planned dependency order was D0 → D1/D3 → D2 with D4 → D5 → D6. These local behaviors are now delivered. Continue with code review and explaining the Task 2 request path, then address remaining environment checks or discuss Task 3. Do not infer later implementation from this backlog.
+The planned dependency order was D0 → D1/D3 → D2 with D4 → D5 → D6. These local behaviors are now delivered. Continue with code review and explaining the Task 2 request path, then agree Task 3 design and acceptance cases. Task 2 environment checks are complete. Do not infer later implementation from this backlog.
 
 The immediate data integration is SQLite, and the next API boundary is HTTP MCP. Streaming PII, token reservations/fallback, React, live agents, new external data vendors, and hosted deployment remain outside the initial delivery. A later read-only agent proposal should specify expected tool choices, invalid/missing customer cases, tool errors, and bounded execution before selecting a provider.
 
@@ -122,10 +122,10 @@ The approved documentation proposal resolves these discrepancies without changin
 
 No code-versus-doc conflict was found suggesting SQLite was absent, Python was the implementation language, or gateways were already running. The historical decision log retains the origin of the explicit error contract using FDE scenario wording.
 
-The September 11 documentation baseline recorded six passing tests and the stdio SDK demo; the documentation-only reconciliation did not add functionality. Task 2 subsequently added code and tests in this active phase, with current validation dated September 15. Git metadata is now available; this work has not initialized or rewritten history or backdated timestamps.
+The September 11 documentation baseline recorded six passing tests and the stdio SDK demo; the documentation-only reconciliation did not add functionality. Task 2 subsequently added code and tests in this active phase, with implementation validation dated September 15 and environment closeout dated October 27. Git metadata is now available; this work has not initialized or rewritten history or backdated timestamps.
 
 ## Task 2 evidence and remaining work
 
 See [02-http-gateway-walkthrough.md](02-http-gateway-walkthrough.md) for exact configuration/contracts and [http.test.ts](../tests/http.test.ts) for acceptance coverage. The new HTTP demo verifies discovery, lookup/refund, viewer denial, admin success, and missing-token rejection.
 
-Remaining work is explicitly separate: fresh-install/recommended-runtime/remote-CI verification; automated audit retention if required; general database contention evaluation; then design of Task 3. Tasks 3–4, UI, live agents, and hosted deployment are still planned or unselected.
+Task 2 is closed: fresh-install/recommended-runtime/remote-CI verification is recorded in [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md). Automated audit retention if required and general database contention evaluation remain separate operational improvements. The next milestone is Task 3 design. Tasks 3–4, UI, live agents, and hosted deployment are still planned or unselected.
