@@ -1,6 +1,6 @@
 # BridgeLayer — Task 2: Follow an Authenticated HTTP Request
 
-Task 2 adds a local HTTP MCP service and security gateway to the existing stdio prototype. No LLM is involved. Tasks 3–4 and the React console remain planned.
+Task 2 adds a local HTTP MCP service and security gateway to the existing stdio prototype. No LLM is involved. Task 3 now adds a separate email-guarded streaming route described in the [streaming walkthrough](03-streaming-guardrails-walkthrough.md); this document covers the unchanged MCP request path. Task 4 and the React console remain planned.
 
 ## Run the demonstration
 

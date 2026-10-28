@@ -1,0 +1,299 @@
+{
+  "node": "v24.22.1",
+  "platform": "darwin",
+  "arch": "arm64",
+  "cpu": "Apple M4 Pro",
+  "settings": {
+    "chunkBytes": 256,
+    "delayMs": 1
+  },
+  "admission": "pipeline invocation; excludes HTTP and authentication",
+  "notes": "Sequential paired runs; timers include scheduler jitter. Slow consumer delay is per emitted fragment, so totals include differing fragment counts. No production throughput claim. Null means no aligned safe span.",
+  "results": [
+    {
+      "name": "plain",
+      "fixture": "plain",
+      "consumerMs": 0,
+      "samples": 10,
+      "reference_first_ms": {
+        "median": 1.193,
+        "p95": 2.408
+      },
+      "safe_first_ms": {
+        "median": 1.21,
+        "p95": 1.477
+      },
+      "reference_total_ms": {
+        "median": 3.617,
+        "p95": 5.143
+      },
+      "guarded_total_ms": {
+        "median": 3.665,
+        "p95": 4.072
+      },
+      "aligned_safe_release_added_ms": {
+        "median": 0.023,
+        "p95": 0.079
+      },
+      "outcomes": [
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success"
+      ],
+      "max_metrics": {
+        "input_bytes": 150,
+        "output_bytes": 32,
+        "redactions": 0,
+        "suppressions": 0,
+        "peak_token_bytes": 9,
+        "peak_line_bytes": 35,
+        "peak_event_bytes": 50,
+        "peak_output_bytes": 9,
+        "peak_frame_bytes": 0
+      }
+    },
+    {
+      "name": "split-email",
+      "fixture": "split-email",
+      "consumerMs": 0,
+      "samples": 10,
+      "reference_first_ms": {
+        "median": 1.207,
+        "p95": 1.241
+      },
+      "safe_first_ms": {
+        "median": 1.23,
+        "p95": 1.279
+      },
+      "reference_total_ms": {
+        "median": 4.782,
+        "p95": 4.856
+      },
+      "guarded_total_ms": {
+        "median": 4.905,
+        "p95": 5.053
+      },
+      "aligned_safe_release_added_ms": {
+        "median": 0.024,
+        "p95": 0.072
+      },
+      "outcomes": [
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success"
+      ],
+      "max_metrics": {
+        "input_bytes": 194,
+        "output_bytes": 34,
+        "redactions": 1,
+        "suppressions": 0,
+        "peak_token_bytes": 26,
+        "peak_line_bytes": 32,
+        "peak_event_bytes": 47,
+        "peak_output_bytes": 16,
+        "peak_frame_bytes": 0
+      }
+    },
+    {
+      "name": "email-heavy",
+      "fixture": "email-heavy",
+      "consumerMs": 0,
+      "samples": 10,
+      "reference_first_ms": {
+        "median": 1.191,
+        "p95": 1.223
+      },
+      "safe_first_ms": {
+        "median": 1.193,
+        "p95": 1.265
+      },
+      "reference_total_ms": {
+        "median": 2.383,
+        "p95": 2.448
+      },
+      "guarded_total_ms": {
+        "median": 2.427,
+        "p95": 2.531
+      },
+      "aligned_safe_release_added_ms": null,
+      "outcomes": [
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success"
+      ],
+      "max_metrics": {
+        "input_bytes": 135,
+        "output_bytes": 50,
+        "redactions": 3,
+        "suppressions": 0,
+        "peak_token_bytes": 16,
+        "peak_line_bytes": 50,
+        "peak_event_bytes": 65,
+        "peak_output_bytes": 16,
+        "peak_frame_bytes": 0
+      }
+    },
+    {
+      "name": "long-token",
+      "fixture": "long-token",
+      "consumerMs": 0,
+      "samples": 10,
+      "reference_first_ms": {
+        "median": 21.219,
+        "p95": 22.413
+      },
+      "safe_first_ms": {
+        "median": 28.459,
+        "p95": 30.66
+      },
+      "reference_total_ms": {
+        "median": 29.179,
+        "p95": 42.551
+      },
+      "guarded_total_ms": {
+        "median": 29.878,
+        "p95": 32.377
+      },
+      "aligned_safe_release_added_ms": null,
+      "outcomes": [
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success"
+      ],
+      "max_metrics": {
+        "input_bytes": 5250,
+        "output_bytes": 31,
+        "redactions": 0,
+        "suppressions": 1,
+        "peak_token_bytes": 4096,
+        "peak_line_bytes": 4113,
+        "peak_event_bytes": 4128,
+        "peak_output_bytes": 19,
+        "peak_frame_bytes": 0
+      }
+    },
+    {
+      "name": "malformed",
+      "fixture": "malformed",
+      "consumerMs": 0,
+      "samples": 10,
+      "reference_first_ms": {
+        "median": 1.364,
+        "p95": 1.391
+      },
+      "safe_first_ms": {
+        "median": 1.371,
+        "p95": 1.467
+      },
+      "reference_total_ms": {
+        "median": 2.825,
+        "p95": 3.173
+      },
+      "guarded_total_ms": {
+        "median": 2.971,
+        "p95": 3.154
+      },
+      "aligned_safe_release_added_ms": null,
+      "outcomes": [
+        "error",
+        "error",
+        "error",
+        "error",
+        "error",
+        "error",
+        "error",
+        "error",
+        "error",
+        "error"
+      ],
+      "max_metrics": {
+        "input_bytes": 119,
+        "output_bytes": 11,
+        "redactions": 0,
+        "suppressions": 0,
+        "peak_token_bytes": 16,
+        "peak_line_bytes": 33,
+        "peak_event_bytes": 48,
+        "peak_output_bytes": 5,
+        "peak_frame_bytes": 0
+      }
+    },
+    {
+      "name": "slow-consumer",
+      "fixture": "plain",
+      "consumerMs": 2,
+      "samples": 10,
+      "reference_first_ms": {
+        "median": 1.373,
+        "p95": 2.067
+      },
+      "safe_first_ms": {
+        "median": 1.35,
+        "p95": 1.527
+      },
+      "reference_total_ms": {
+        "median": 10.47,
+        "p95": 16.583
+      },
+      "guarded_total_ms": {
+        "median": 24.688,
+        "p95": 26.676
+      },
+      "aligned_safe_release_added_ms": {
+        "median": 2.308,
+        "p95": 3.477
+      },
+      "outcomes": [
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success",
+        "success"
+      ],
+      "max_metrics": {
+        "input_bytes": 150,
+        "output_bytes": 32,
+        "redactions": 0,
+        "suppressions": 0,
+        "peak_token_bytes": 9,
+        "peak_line_bytes": 35,
+        "peak_event_bytes": 50,
+        "peak_output_bytes": 9,
+        "peak_frame_bytes": 0
+      }
+    }
+  ]
+}

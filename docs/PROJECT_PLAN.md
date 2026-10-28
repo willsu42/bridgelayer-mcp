@@ -11,7 +11,7 @@ The four workstreams remain appropriate to the current architecture. Phase commi
 - **Missing:** absent and not committed as an implementation milestone.
 - **Planned:** documented future functionality with no implementation.
 
-“In Progress” below identifies ongoing work, not intentions. Task 2 is complete, including environment verification and remote CI evidence recorded in the [October 27 closeout](TASK2_CLOSEOUT.md). No later workstream has started.
+“In Progress” below identifies ongoing work, not intentions. Task 2 is complete, including environment verification and remote CI evidence recorded in the [October 27 closeout](TASK2_CLOSEOUT.md). Task 3 is implemented locally as of October 28; remote CI for its new code remains pending. Task 4 has not started.
 
 ## Documentation status matrix
 
@@ -32,7 +32,7 @@ Pre-September 11 attribution uses the developer's statement and September 8 insp
 | Node 22/24 CI workflow definition | Implemented | Yes | Both jobs verified successful for a744bfd | — |
 | Verified remote CI results | Implemented evidence | Not established | Successful existing run inspected October 27; see closeout | — |
 | HTTP security gateway / authentication | Implemented | No | Signed demo tokens, role policy, separate downstream credentials | Production OAuth outside current scope |
-| Streaming PII guardrail | Planned | No | Later phase | Incremental stream inspection |
+| Streaming PII guardrail | Implemented locally | No | Email-only mock pipeline and authenticated streaming route; local Node 22/24 verification | Remote CI; other PII/live provider integrations remain separate |
 | Token limiter / model fallback | Planned | No | Later phase | Reservations and routing |
 | LLM calls / autonomous agents | Missing | No | Out of initial scope | Candidate extension |
 | React console | Planned | No | Later phase | Backend-driven demo UI |
@@ -75,21 +75,19 @@ The original workstream acceptance criteria are now covered locally: unfiltered 
 
 ## 3. LLM Streaming Guardrails
 
+The [Task 3 implementation plan](TASK3_PLAN.md) defines scope, contracts, milestones, tests, and measurements. Development was authorized October 28 after email-only scope confirmation; local implementation and validation are recorded in [TASK3_VALIDATION.md](TASK3_VALIDATION.md).
+
 ### Existing
 
-None. No provider adapter, streamed LLM output, or redaction implementation exists.
+A deterministic byte-stream mock feeds incremental UTF-8 decoding, SSE/JSON validation, and bounded email redaction. The authenticated `/guardrails/stream` route rebuilds safe SSE output, propagates cancellation, honors backpressure, and records text-free diagnostics. Exact supported patterns and false-positive limits are in the [walkthrough](03-streaming-guardrails-walkthrough.md). No live provider/model is selected.
 
 ### In Progress
 
-None; outside the initial September 11 phase delivery.
+Local type checking and 42 tests/subtests pass on Node 22.23.4 and 24.22.1. All three demos pass on Node 24. Remote CI for the new implementation remains pending; Task 2's old successful run is not evidence for Task 3.
 
 ### Planned
 
-Separate byte decoding, provider-event parsing, and incremental text inspection. Start with deterministic provider mocks. Test every split position for supported sensitive patterns, multiple events per chunk, escaped text, Unicode boundaries, final flush, cancellation, and slow consumers.
-
-Keep ambiguity buffers bounded. Suppress oversized ambiguous sequences conservatively until a safe boundary. Document supported formats and false-positive/false-negative limits. No provider or model is selected.
-
-Acceptance: deterministic streaming cases pass; report measured time to first safe output, added redaction latency, and peak buffer size. No such measurements exist yet.
+Obtain actual remote Node 22/24 CI evidence after publishing the change through the normal repository workflow. Additional PII formats and live provider adapters are separate decisions. The current benchmark records first safe output, aligned safe-prefix delay, completion time, and logical buffer peaks; it makes no production capacity or universal PII claim.
 
 ## 4. Rate Limiting & Model Fallback
 

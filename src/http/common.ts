@@ -16,14 +16,14 @@ export function rpcError(res: ServerResponse, status: number, code: number, mess
 }
 
 // Exact local Host/Origin checks prevent a foreign website from addressing a local endpoint.
-export function validateEndpoint(req: IncomingMessage): void {
+export function validateEndpoint(req: IncomingMessage, path = '/mcp'): void {
   const port = req.socket.localPort;
   const hosts = [`127.0.0.1:${port}`, `localhost:${port}`];
   if (!hosts.includes(req.headers.host ?? '')) throw new HttpError(403, -32600, 'Invalid host');
   if (req.headers.origin !== undefined && !hosts.map(host => `http://${host}`).includes(req.headers.origin)) {
     throw new HttpError(403, -32600, 'Invalid origin');
   }
-  if (req.url !== '/mcp') throw new HttpError(404, -32600, 'Not found');
+  if (req.url !== path) throw new HttpError(404, -32600, 'Not found');
 }
 
 export function header(req: IncomingMessage, name: string): string | undefined {

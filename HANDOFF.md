@@ -4,7 +4,7 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Context for the next session
 
-> Read README.md, docs/PROJECT_SCOPE.md, docs/PROJECT_PLAN.md, docs/ARCHITECTURE.md, docs/DEVELOPMENT_PLAN.md, docs/decisions.md, and docs/02-http-gateway-walkthrough.md. Continue from the completed inspection and Task 2 implementation; do not restart analysis from scratch. Task 1's stdio server, two customer tools, SQLite, and initial tests/demo predate September 11. Task 2's HTTP service/security gateway, denial auditing, and restart regression were added during the active phase and locally verified September 15. Task 2 closeout on October 27 verified a clean Node 24 install, all 23 tests/subtests, both demos, and the existing remote Node 22/24 CI results; read docs/TASK2_CLOSEOUT.md. Tasks 3–4, UI, and all LLM/agent functionality remain planned. Walk through the gateway trust boundaries and failure cases before proposing the next milestone. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and inspect code with me in VS Code. Follow explain → agree → implement → demonstrate → practice explaining back.
+> Continue from Task 3's local email-only implementation. Read docs/TASK3_PLAN.md, docs/03-streaming-guardrails-walkthrough.md, and docs/TASK3_VALIDATION.md. Tasks 1–2 remain compatible; the streaming route uses synthetic fixtures and no live LLM. Local Node 22/24 validation is recorded, but remote CI for Task 3 is still pending. Review the byte/event/text boundaries and supported email grammar before extending formats or beginning Task 4. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and follow explain → agree → implement → demonstrate → practice explaining back.
 
 ## Current evidence and limits
 
@@ -18,7 +18,9 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Next work
 
-Run `npm run demo:http` and inspect the [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). Explain why discovery is unfiltered, denied calls never execute downstream, credentials differ, and a timed-out refund must not be retried automatically. Task 2 environment checks are closed; review the [closeout](docs/TASK2_CLOSEOUT.md) and agree Task 3 design/acceptance before implementation. Shared fictional customers still have no tenant isolation.
+Run `npm run demo:streaming` and inspect the [streaming walkthrough](docs/03-streaming-guardrails-walkthrough.md). Review the implementation and publish through the normal repository workflow, then verify the actual Node 22/24 remote CI run for Task 3. Local evidence and benchmark limits are in [TASK3_VALIDATION.md](docs/TASK3_VALIDATION.md). No new commit, push, deployment, or remote workflow run is claimed by the local implementation session.
+
+Explain why an unresolved email prefix cannot be emitted, why a malformed provider stream must discard pending text, and how backpressure stops source reads. Phone detection remains deferred. Task 4 requires a separate design discussion; shared customer records still have no tenant isolation.
 
 ## Files to inspect during implementation
 

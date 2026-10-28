@@ -60,3 +60,9 @@ Final recheck on September 16 (America/Chicago) passed type checking, all 23 tes
 ## Task 2 closeout — October 27, 2026
 
 Clean installation on Node 24.22.1 / npm 11.19.1, type checking, all 23 tests/subtests, and both HTTP/stdio demos passed. The existing GitHub CI run for `a744bfd` succeeded on Node 22 and 24; its results were inspected today, not rerun. [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md) records exact installation conditions, runtime verification, CI links, and scope boundaries. Task 2 acceptance is complete; no application code or dependency pins changed. Automated retention, database capacity, hosting, and Tasks 3–4 remain separate work.
+
+## Task 3 — Email-only stream inspection, October 28, 2026
+
+The user confirmed email-only scope and authorized development. Use a separate authenticated `/guardrails/stream` path because the existing MCP gateway validates complete JSON responses. An injected deterministic mock supplies SSE bytes without external credentials. Hold whole whitespace tokens and redact them when a supported ASCII email substring is found; bounded oversize suppression avoids releasing ambiguous prefixes. This intentionally removes surrounding punctuation and can redact malformed addresses. The adapter contract requires abort cooperation, and errors never flush pending raw text.
+
+No new dependency, database schema, model, or token-budget mechanism was introduced. [The walkthrough](03-streaming-guardrails-walkthrough.md) defines exact formats and lifecycle limits; [validation](TASK3_VALIDATION.md) records local checks and measurements. Remote Task 3 CI remains pending. Existing MCP customer lookup still returns fictional email data and is not routed through this filter.

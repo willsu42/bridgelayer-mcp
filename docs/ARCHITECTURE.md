@@ -1,6 +1,6 @@
 # BridgeLayer — Architecture
 
-Status after Task 2 closeout, October 27, 2026; see [verification evidence](TASK2_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are implemented; no work is currently claimed as partially implemented. Later tasks remain planned.
+Status after local Task 3 implementation, October 28, 2026; see [Task 3 verification](TASK3_VALIDATION.md) and the historical [Task 2 closeout](TASK2_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are complete. Task 3 is implemented and locally tested with remote CI pending; Task 4 remains planned.
 
 ## ✅ Existing request paths
 
@@ -62,13 +62,18 @@ Tool and gateway diagnostics include duration and outcome. Gateway logs preserve
 
 SQLite calls are synchronous; long statements/busy waits can block the event loop. General multi-process lock-contention capacity, throughput, versioned customer-schema migrations, and tenant isolation are not implemented or measured. Database output still relies on the controlled schema and a TypeScript row assertion. No centralized tracing/metrics service or remote deployment is present.
 
+## ✅ Local Task 3 streaming path
+
+The gateway additionally routes `POST /guardrails/stream` to [streaming/http.ts](../src/streaming/http.ts). It shares JWT and Host/Origin checks but uses a strict fixture request and ordinary SSE responses, not MCP envelopes. A deterministic in-process provider feeds byte decoding → SSE/JSON validation → bounded email-token inspection → newly serialized safe output. Only this route is redacted; customer MCP records retain their original semantics.
+
+Each stream owns its state and cancellation controller. Four requests may be admitted per process. Provider reads stop during output backpressure; disconnect, timeout, and shutdown abort the source. No text or raw provider errors are logged. Limits, false-positive/false-negative boundaries, and the mock-adapter contract are in the [walkthrough](03-streaming-guardrails-walkthrough.md); local Node 22/24 evidence and measurements are in [validation](TASK3_VALIDATION.md). No live LLM calls or token accounting exist.
+
 ## 🗓 Planned later components
 
 | Component | Intended role |
 | --- | --- |
-| Task 3: LLM streaming guardrail | Byte/event/text boundaries, bounded ambiguity buffers, deterministic redaction tests and measurements. |
 | Task 4: token limiter/model fallback | Tenant usage reservations/reconciliation, concurrent admissions, provider attempt/fallback policy. Existing SQLite is infrastructure only; no budget tables exist. |
-| Provider adapters | Start with deterministic mocks; live provider/model undecided. |
+| Live provider adapters | Deterministic mock exists; live provider/model undecided. |
 | React console/application backend | Exercise implemented backend behavior. No UI exists today. |
 | Autonomous agent / external customer APIs / hosting | Separate extension candidates; no selected vendor or implementation. |
 

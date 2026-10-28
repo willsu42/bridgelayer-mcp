@@ -16,7 +16,9 @@
     "demo:http": "npm run build --silent && node dist/scripts/demo-http.js",
     "demo": "npm run build --silent && node dist/scripts/demo.js",
     "test": "npm run build --silent && node --test dist/tests/*.test.js",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "demo:streaming": "npm run build --silent && node dist/scripts/demo-streaming.js",
+    "bench:streaming": "npm run build --silent && node dist/scripts/benchmark-streaming.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",

@@ -16,6 +16,7 @@ Customer-support integrations need a clear boundary between incoming requests, a
 | --- | --- |
 | Task 1: customer MCP service | Original stdio server with strict validation, lookup, simulated refunds, SQLite, and rollback tests. |
 | Task 2: HTTP MCP security gateway | Stateless HTTP MCP with signed demo JWTs, role policy, request correlation, and separate downstream credentials. |
+| Task 3: streaming email guardrail | Authenticated `/guardrails/stream` with deterministic mock bytes, bounded incremental redaction, cancellation, and a local demo; remote CI for this change is pending. |
 | `get_customer_record` | Takes `customer_id`; returns a fictional record or business error. |
 | `trigger_refund` | Takes `customer_id`, `amount`, `reason`; atomically stores a simulated refund and its success audit. |
 | `admin_health_check` | HTTP-only harmless admin test tool; returns fixed health information without data changes. |
@@ -26,7 +27,7 @@ Customer IDs require five ASCII digits after `CUST-`; extra arguments are reject
 
 ### Planned
 
-**Tasks 3–4 remain planned:** streaming PII guardrails and token limiting/model fallback. The React support console is also planned. Live agents, real customer APIs, and hosted deployment remain separate extension candidates.
+**Task 4 remains planned:** token limiting/model fallback. Task 3 is implemented and locally verified for common ASCII email patterns with a mock provider; see its [walkthrough](docs/03-streaming-guardrails-walkthrough.md) and [validation](docs/TASK3_VALIDATION.md). The React support console is also planned. Live agents, real customer APIs, and hosted deployment remain separate extension candidates.
 
 ## Architecture
 
@@ -64,6 +65,15 @@ The temporary HTTP demo initializes viewer/admin clients and demonstrates:
 
 It generates temporary credentials/databases, does not print tokens, and cleans up afterward. `npm run demo` still runs the original stdio demonstration.
 
+To exercise the email-only streaming path:
+
+```sh
+npm run demo:streaming
+npm run bench:streaming
+```
+
+It accepts predefined synthetic fixtures rather than arbitrary prompts. Email-containing whitespace tokens are replaced as a whole; punctuation may also be removed. Existing customer MCP responses are not passed through this filter. No live LLM or general-purpose PII detection is implemented.
+
 ## Tech stack
 
 Repository pins: TypeScript `7.0.2`, MCP SDK `1.30.0`, Zod `4.5.4`, and `jose` `6.2.12` for JWTs. The application uses Node.js ES modules, built-in HTTP/SQLite, npm, and Node's test runner. No application HTTP framework, React app, or LLM SDK is introduced.
@@ -95,6 +105,8 @@ Naming compatibility: package `supportbridge`, MCP server `supportbridge-custome
 
 ## Testing
 
+**October 28, 2026:** Task 3 local type checking and **42 tests/subtests** pass on Node **22.23.4** and **24.22.1**. All three demos pass on Node 24; the [validation record](docs/TASK3_VALIDATION.md) includes benchmark results. Existing Task 2 CI results below do not establish remote CI success for these new changes.
+
 On **September 15, 2026**, local type checking and **23 tests/subtests** passed on Node `25.5.0`, including the existing six stdio tests and new HTTP integration/failure checks. The HTTP SDK-client demo also completed. The suite now verifies original refund/audit records after a complete server restart.
 
 HTTP coverage includes token validation, direct-service rejection, zero downstream calls after denial, durable denial records, audit failure, Origin/Host checks, invalid/batched/oversize input, credential separation, concurrent identical request IDs, downstream reply validation, timeout, disconnect/shutdown cancellation, and log privacy.
@@ -119,13 +131,13 @@ See the [decision log](docs/decisions.md) for pinned SDK framing/error details a
 
 Task 1 predates September 11. Scope/documentation reconciliation belongs to the new phase; Task 2 and the restart regression were implemented and validated in this phase, with final scope acceptance and environment verification completed October 27, 2026. Git history has not been rewritten.
 
-Limits: fictional records are shared, without tenant data isolation. Viewers can create simulated refunds; the admin-prefix rule is not real-payment authorization. Requests are never automatically retried; aborting a timeout cannot undo a committed refund. Denial auditing has no automated retention policy. There is no hosted deployment, measured production capacity, streaming guardrail, token budget, or AI workflow.
+Limits: fictional records are shared, without tenant data isolation. Viewers can create simulated refunds; the admin-prefix rule is not real-payment authorization. Requests are never automatically retried; aborting a timeout cannot undo a committed refund. Denial auditing has no automated retention policy. There is no hosted deployment, measured production capacity, token budget, or AI workflow. The streaming guardrail covers documented email patterns only and currently uses deterministic mocks.
 
 ## Roadmap and learning
 
 1. Task 1 — implemented; retain stdio compatibility.
 2. Task 2 — complete within the local gateway scope; clean-install/Node 24 checks, demos, and remote Node 22/24 CI are verified.
-3. Task 3 — planned streaming PII guardrails.
+3. Task 3 — email-only streaming guardrail implemented and locally verified; remote CI remains pending. See the [plan and status](docs/TASK3_PLAN.md).
 4. Task 4 — planned token budgets/model fallback.
 
 Read the [project plan](docs/PROJECT_PLAN.md), [active scope](docs/PROJECT_SCOPE.md), and [development backlog](docs/DEVELOPMENT_PLAN.md). Start code discussion with the [stdio walkthrough](docs/01-mcp-walkthrough.md) and [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). VS Code tasks/debugging and the [handoff](HANDOFF.md) support continuing the explain → agree → implement → demonstrate → practice workflow.

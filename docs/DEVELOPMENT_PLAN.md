@@ -128,4 +128,8 @@ The September 11 documentation baseline recorded six passing tests and the stdio
 
 See [02-http-gateway-walkthrough.md](02-http-gateway-walkthrough.md) for exact configuration/contracts and [http.test.ts](../tests/http.test.ts) for acceptance coverage. The new HTTP demo verifies discovery, lookup/refund, viewer denial, admin success, and missing-token rejection.
 
-Task 2 is closed: fresh-install/recommended-runtime/remote-CI verification is recorded in [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md). Automated audit retention if required and general database contention evaluation remain separate operational improvements. The next milestone is Task 3 design. Tasks 3–4, UI, live agents, and hosted deployment are still planned or unselected.
+Task 2 is closed: fresh-install/recommended-runtime/remote-CI verification is recorded in [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md). Automated audit retention if required and general database contention evaluation remain separate operational improvements. At Task 2 closeout, the next milestone was Task 3 design. The October 28 entry below records its subsequent local implementation; Task 4, UI, live agents, and hosted deployment remain planned or unselected.
+
+## Next phase — Task 3, October 28, 2026
+
+The email-only [Task 3 plan](TASK3_PLAN.md) was followed by local implementation: mock byte source, parser/redactor pipeline, authenticated streaming route, tests, demo, and benchmark. See [validation](TASK3_VALIDATION.md) for local Node 22/24 results and the remaining remote CI gate. The September backlog above and Task 2 closeout remain historical scope records. Task 4, live LLMs, additional PII formats, UI, and hosting have not started.

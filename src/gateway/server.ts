@@ -1,3 +1,6 @@
+import { createStreamHandler } from '../streaming/http.js';
+import type { Provider } from '../streaming/provider.js';
+import type { Schedule } from '../streaming/contracts.js';
 import { JSONRPCMessageSchema } from '@modelcontextprotocol/sdk/types.js';
 import { header, HttpError, json, listenLoopback, readMessage, rpcError, validateEndpoint, validatePost } from '../http/common.js';
 import { secretBytes, verifyToken } from './auth.js';
@@ -7,6 +10,7 @@ import { log, type LogEvent } from '../logger.js';
 export async function startGateway(options: {
   downstreamUrl: string; serviceKey: string; jwtSecret: string; audit: GatewayAudit;
   port?: number; timeoutMs?: number; logger?: (event: LogEvent) => void;
+  streamProvider?: Provider; streamSchedule?: Schedule;
 }) {
   secretBytes(options.serviceKey); secretBytes(options.jwtSecret);
   if (options.serviceKey === options.jwtSecret) throw new Error('Use separate gateway and downstream credentials');
@@ -18,7 +22,13 @@ export async function startGateway(options: {
   const timeoutMs = options.timeoutMs ?? 3000;
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000) throw new Error('Invalid downstream timeout');
   const emit = options.logger ?? log;
+  const stream = createStreamHandler({
+    jwtSecret: options.jwtSecret, audit: options.audit, emit,
+    ...(options.streamProvider ? { provider: options.streamProvider } : {}),
+    ...(options.streamSchedule ? { schedule: options.streamSchedule } : {}),
+  });
   return listenLoopback(async (req, res) => {
+    if (req.url === '/guardrails/stream') { await stream(req, res); return; }
     const started = performance.now();
     let id: string | number | undefined;
     let outcome: LogEvent['outcome'] = 'rejected';
