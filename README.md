@@ -16,7 +16,7 @@ Customer-support integrations need a clear boundary between incoming requests, a
 | --- | --- |
 | Task 1: customer MCP service | Original stdio server with strict validation, lookup, simulated refunds, SQLite, and rollback tests. |
 | Task 2: HTTP MCP security gateway | Stateless HTTP MCP with signed demo JWTs, role policy, request correlation, and separate downstream credentials. |
-| Task 3: streaming email guardrail | Authenticated `/guardrails/stream` with deterministic mock bytes, bounded incremental redaction, cancellation, and a local demo; remote CI for this change is pending. |
+| Task 3: streaming email guardrail | Authenticated `/guardrails/stream` with deterministic mock bytes, bounded incremental redaction, cancellation, and a local demo; local verification and remote Node 22/24 CI are complete. |
 | `get_customer_record` | Takes `customer_id`; returns a fictional record or business error. |
 | `trigger_refund` | Takes `customer_id`, `amount`, `reason`; atomically stores a simulated refund and its success audit. |
 | `admin_health_check` | HTTP-only harmless admin test tool; returns fixed health information without data changes. |
@@ -27,7 +27,7 @@ Customer IDs require five ASCII digits after `CUST-`; extra arguments are reject
 
 ### Planned
 
-**Task 4 remains planned:** token limiting/model fallback. Task 3 is implemented and locally verified for common ASCII email patterns with a mock provider; see its [walkthrough](docs/03-streaming-guardrails-walkthrough.md) and [validation](docs/TASK3_VALIDATION.md). The React support console is also planned. Live agents, real customer APIs, and hosted deployment remain separate extension candidates.
+**Task 4 remains planned:** token limiting/model fallback. Task 3 is complete for common ASCII email patterns with a mock provider; see its [walkthrough](docs/03-streaming-guardrails-walkthrough.md) and [validation](docs/TASK3_VALIDATION.md). The React support console is also planned. Live agents, real customer APIs, and hosted deployment remain separate extension candidates.
 
 ## Architecture
 
@@ -105,7 +105,7 @@ Naming compatibility: package `supportbridge`, MCP server `supportbridge-custome
 
 ## Testing
 
-**October 28, 2026:** Task 3 local type checking and **42 tests/subtests** pass on Node **22.23.4** and **24.22.1**. All three demos pass on Node 24; the [validation record](docs/TASK3_VALIDATION.md) includes benchmark results. Existing Task 2 CI results below do not establish remote CI success for these new changes.
+**October 28, 2026:** Task 3 local type checking and **42 tests/subtests** pass on Node **22.23.4** and **24.22.1**. All three demos pass on Node 24; the [validation record](docs/TASK3_VALIDATION.md) includes benchmark results. **October 29:** remote Node 22/24 CI for the Task 3 implementation and current revision was verified successful; see the [closeout and run links](docs/TASK3_CLOSEOUT.md).
 
 On **September 15, 2026**, local type checking and **23 tests/subtests** passed on Node `25.5.0`, including the existing six stdio tests and new HTTP integration/failure checks. The HTTP SDK-client demo also completed. The suite now verifies original refund/audit records after a complete server restart.
 
@@ -137,7 +137,7 @@ Limits: fictional records are shared, without tenant data isolation. Viewers can
 
 1. Task 1 — implemented; retain stdio compatibility.
 2. Task 2 — complete within the local gateway scope; clean-install/Node 24 checks, demos, and remote Node 22/24 CI are verified.
-3. Task 3 — email-only streaming guardrail implemented and locally verified; remote CI remains unverified. See the [progress report](docs/TASK3_PROGRESS.md) and [plan](docs/TASK3_PLAN.md).
+3. Task 3 — complete within the email-only mock-provider scope; local checks and remote Node 22/24 CI verified. See the [closeout](docs/TASK3_CLOSEOUT.md) and [progress report](docs/TASK3_PROGRESS.md).
 4. Task 4 — planned token budgets/model fallback.
 
 Read the [project plan](docs/PROJECT_PLAN.md), [active scope](docs/PROJECT_SCOPE.md), and [development backlog](docs/DEVELOPMENT_PLAN.md). Start code discussion with the [stdio walkthrough](docs/01-mcp-walkthrough.md) and [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). VS Code tasks/debugging and the [handoff](HANDOFF.md) support continuing the explain → agree → implement → demonstrate → practice workflow.

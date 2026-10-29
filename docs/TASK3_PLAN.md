@@ -1,10 +1,10 @@
 # Task 3 — Streaming PII guardrails implementation plan
 
-Drafted October 28, 2026 (Asia/Taipei). **Status: implemented and locally verified; remote CI for the new code remains pending.** Task 2 is complete; its evidence remains in [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md). This is the next-phase proposal, not an expansion of the completed September scope.
+Drafted October 28, 2026 (Asia/Taipei). **Status: complete within the agreed email-only mock-provider scope; remote CI verified October 29, 2026.** See [closeout evidence](TASK3_CLOSEOUT.md). Task 2 is complete; its evidence remains in [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md). This is the next-phase proposal, not an expansion of the completed September scope.
 
 ## Implementation status — October 28
 
-The user authorized development after confirming email-only scope. Milestones 1–6 are implemented; milestone 7 has local Node 22/24 validation, three demos, and measured results, with remote CI still pending. The original proposal below is retained as the design baseline. The [walkthrough](03-streaming-guardrails-walkthrough.md) records the exact adopted detector, error, and resource contracts; [validation](TASK3_VALIDATION.md) distinguishes measured local evidence from outstanding CI.
+The user authorized development after confirming email-only scope. All seven milestones are complete: implementation, local Node 22/24 validation, three demos, and measured results were delivered October 28; remote Node 22/24 CI was verified October 29. The original proposal below is retained as the design baseline. The [walkthrough](03-streaming-guardrails-walkthrough.md) records the exact adopted detector, error, and resource contracts; [validation](TASK3_VALIDATION.md) records local evidence and links to the completed remote CI checks.
 
 Implementation refinements: substring matching intentionally redacts malformed surrounding tokens; SSE event byte accounting normalizes CRLF; 64 consecutive empty source chunks are allowed before rejection; request-body timeout is HTTP 408; peak output-frame size is measured separately; benchmark timing starts at pipeline invocation, excluding HTTP/authentication. Hand-authored and independent fixture-policy tests replace any claim of universal PII detection. The benchmark reports aligned safe-prefix delay only where a comparable span exists.
 

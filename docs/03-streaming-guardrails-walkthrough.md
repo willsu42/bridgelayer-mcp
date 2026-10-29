@@ -85,4 +85,4 @@ The tests cover every two-part split of a short mixed UTF-8/SSE/JSON fixture, ev
 
 Run `npm run bench:streaming` for paired unredacted-reference and guarded pipeline measurements. The reference lives only in the benchmark script and is not exposed by HTTP. Measurements start at pipeline invocation, exclude HTTP/authentication, and include source pacing. Added release delay is reported only for aligned known-safe prefixes; other cases are `null`. Slow-consumer delay is applied per emitted fragment, so its total duration also reflects different fragment counts. Reported logical buffer peaks are not a heap profiler.
 
-See [TASK3_VALIDATION.md](TASK3_VALIDATION.md) for actual local results and the remaining remote CI gate.
+See [TASK3_VALIDATION.md](TASK3_VALIDATION.md) for local results and [TASK3_CLOSEOUT.md](TASK3_CLOSEOUT.md) for the completed remote CI gate, verified October 29, 2026.

@@ -4,7 +4,7 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Context for the next session
 
-> Continue from Task 3's local email-only implementation. Read docs/TASK3_PLAN.md, docs/03-streaming-guardrails-walkthrough.md, and docs/TASK3_VALIDATION.md. Tasks 1–2 remain compatible; the streaming route uses synthetic fixtures and no live LLM. Local Node 22/24 validation is recorded, but remote CI for Task 3 is still pending. Review the byte/event/text boundaries and supported email grammar before extending formats or beginning Task 4. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and follow explain → agree → implement → demonstrate → practice explaining back.
+> Continue from Task 3's completed email-only milestone. Read docs/TASK3_PLAN.md, docs/03-streaming-guardrails-walkthrough.md, and docs/TASK3_VALIDATION.md. Tasks 1–2 remain compatible; the streaming route uses synthetic fixtures and no live LLM. Local Node 22/24 validation and remote CI are verified; read docs/TASK3_CLOSEOUT.md for the October 29 closeout and exact run links. Review the byte/event/text boundaries and supported email grammar before extending formats or beginning Task 4. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and follow explain → agree → implement → demonstrate → practice explaining back.
 
 ## Current evidence and limits
 
@@ -18,7 +18,7 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Next work
 
-Run `npm run demo:streaming` and inspect the [streaming walkthrough](docs/03-streaming-guardrails-walkthrough.md). Review the implementation and publish through the normal repository workflow, then verify the actual Node 22/24 remote CI run for Task 3. Local evidence and benchmark limits are in [TASK3_VALIDATION.md](docs/TASK3_VALIDATION.md). No new commit, push, deployment, or remote workflow run is claimed by the local implementation session.
+Task 3 is closed; see [TASK3_CLOSEOUT.md](docs/TASK3_CLOSEOUT.md). Remote Node 22/24 installation and checks passed for both `6eb5604` and `b0ef476`, verified October 29. Start Task 4 with a design discussion covering token reservations, usage reconciliation, unknown usage, and fallback before streaming output. Local measurements and limits remain in [TASK3_VALIDATION.md](docs/TASK3_VALIDATION.md). The closeout itself updated documentation without committing, pushing, deploying, or triggering a workflow.
 
 Explain why an unresolved email prefix cannot be emitted, why a malformed provider stream must discard pending text, and how backpressure stops source reads. Phone detection remains deferred. Task 4 requires a separate design discussion; shared customer records still have no tenant isolation.
 

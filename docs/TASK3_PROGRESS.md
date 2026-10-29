@@ -1,8 +1,8 @@
 # Task 3 progress report — Streaming email guardrails
 
-**As of October 28, 2026 (Asia/Taipei)**
+**As of October 29, 2026 (Asia/Taipei); implementation and local measurements dated October 28.**
 
-Task 3 now has a working local prototype that detects supported email patterns in streamed text and replaces them before they reach the client. It includes an authenticated HTTP endpoint, deterministic provider fixtures, automated tests, a runnable demo, and benchmark results. The implementation is recorded in commit `6eb5604` (`develop task 3 proto`). Remote CI results for this implementation have not been verified in this report.
+Task 3 now has a working local prototype that detects supported email patterns in streamed text and replaces them before they reach the client. It includes an authenticated HTTP endpoint, deterministic provider fixtures, automated tests, a runnable demo, and benchmark results. The implementation is recorded in commit `6eb5604` (`develop task 3 proto`). Remote Node 22/24 CI has now been verified for this implementation and the subsequent `b0ef476` revision. **Task 3 is complete within the agreed scope**; see the [closeout](TASK3_CLOSEOUT.md).
 
 ## What we set out to solve
 
@@ -51,7 +51,7 @@ The streaming route is ordinary HTTP/SSE. It does not change the MCP transport o
 
 ## What we verified
 
-The following results were recorded during implementation on October 28; this progress-document update did not rerun the suite.
+Local results below were recorded during implementation on October 28. The remote CI row was verified October 29; this documentation update did not rerun the local suite.
 
 | Verification | Recorded result |
 | --- | --- |
@@ -62,6 +62,7 @@ The following results were recorded during implementation on October 28; this pr
 | New streaming coverage | 19 additional cases cover chunk boundaries, supported patterns, malformed input, buffer limits, cancellation, backpressure, authentication, concurrency, audit failures, and log privacy. |
 | Demonstrations | Streaming, HTTP MCP, and stdio demos completed on Node 24. |
 | Benchmark | Six scenarios with ten paired reference/guarded samples each; results stored in the repository. |
+| Remote CI, verified October 29 | Node 22/24 jobs passed `npm ci` and `npm run check` for both `6eb5604` and `b0ef476`; [run and job links](TASK3_CLOSEOUT.md). |
 
 Boundary tests include every two-part split of a mixed UTF-8/SSE/JSON fixture, every text split through supported email fixtures, byte-at-a-time delivery, and seeded chunk layouts. They check emitted prefixes as well as final output, using hand-authored expectations and an independent policy over known synthetic addresses. Controlled writable tests verify that backpressure stops source reads; real HTTP tests verify disconnect and shutdown cancellation.
 
@@ -73,9 +74,8 @@ The benchmark observed a median first safe output of approximately **1.23 ms** f
 - No phone-number, name, address, government-ID, or payment-card detection. Internationalized and obfuscated email forms are not guaranteed.
 - No blanket protection for existing MCP responses; fictional customer emails still appear in customer lookup results.
 - No token budgets, model fallback, React console, hosted deployment, or new tenant isolation.
-- No verified remote Node 22/24 CI result for commit `6eb5604` in the evidence reviewed here. The old Task 2 CI run does not verify Task 3.
 
-The next acceptance step is to inspect the remote CI run for the Task 3 commit, or run the existing workflow through the normal repository process if no run exists. Additional formats and live provider integration require separate scope decisions. Task 4 remains a later workstream.
+All acceptance steps for the agreed Task 3 scope are complete. Additional formats and live provider integration require separate scope decisions. The next workstream is Task 4 design: token reservations, usage reconciliation, and fallback before output begins.
 
 ## How to review and run the work
 

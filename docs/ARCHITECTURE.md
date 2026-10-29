@@ -1,6 +1,6 @@
 # BridgeLayer — Architecture
 
-Status after local Task 3 implementation, October 28, 2026; see [Task 3 verification](TASK3_VALIDATION.md) and the historical [Task 2 closeout](TASK2_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are complete. Task 3 is implemented and locally tested with remote CI pending; Task 4 remains planned.
+Status after Task 3 closeout, October 29, 2026; see [Task 3 verification](TASK3_VALIDATION.md) and the historical [Task 2 closeout](TASK2_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are complete. Task 3 is complete within its email-only mock-provider scope, including verified remote CI; Task 4 remains planned.
 
 ## ✅ Existing request paths
 

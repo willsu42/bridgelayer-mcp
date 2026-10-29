@@ -132,4 +132,4 @@ Task 2 is closed: fresh-install/recommended-runtime/remote-CI verification is re
 
 ## Next phase — Task 3, October 28, 2026
 
-The email-only [Task 3 plan](TASK3_PLAN.md) was followed by local implementation: mock byte source, parser/redactor pipeline, authenticated streaming route, tests, demo, and benchmark. See [validation](TASK3_VALIDATION.md) for local Node 22/24 results and the remaining remote CI gate. The September backlog above and Task 2 closeout remain historical scope records. Task 4, live LLMs, additional PII formats, UI, and hosting have not started.
+The email-only [Task 3 plan](TASK3_PLAN.md) was followed by local implementation: mock byte source, parser/redactor pipeline, authenticated streaming route, tests, demo, and benchmark. See [validation](TASK3_VALIDATION.md) for local Node 22/24 results and the [October 29 closeout](TASK3_CLOSEOUT.md) for successful remote Node 22/24 CI. All Task 3 acceptance items are complete within the agreed email-only mock-provider scope. The September backlog above and Task 2 closeout remain historical scope records. Task 4, live LLMs, additional PII formats, UI, and hosting have not started.
