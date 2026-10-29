@@ -137,7 +137,7 @@ Limits: fictional records are shared, without tenant data isolation. Viewers can
 
 1. Task 1 — implemented; retain stdio compatibility.
 2. Task 2 — complete within the local gateway scope; clean-install/Node 24 checks, demos, and remote Node 22/24 CI are verified.
-3. Task 3 — email-only streaming guardrail implemented and locally verified; remote CI remains pending. See the [plan and status](docs/TASK3_PLAN.md).
+3. Task 3 — email-only streaming guardrail implemented and locally verified; remote CI remains unverified. See the [progress report](docs/TASK3_PROGRESS.md) and [plan](docs/TASK3_PLAN.md).
 4. Task 4 — planned token budgets/model fallback.
 
 Read the [project plan](docs/PROJECT_PLAN.md), [active scope](docs/PROJECT_SCOPE.md), and [development backlog](docs/DEVELOPMENT_PLAN.md). Start code discussion with the [stdio walkthrough](docs/01-mcp-walkthrough.md) and [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). VS Code tasks/debugging and the [handoff](HANDOFF.md) support continuing the explain → agree → implement → demonstrate → practice workflow.
