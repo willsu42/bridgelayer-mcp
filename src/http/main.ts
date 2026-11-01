@@ -1,3 +1,4 @@
+import { TokenBudget } from '../resilience/budget.js';
 import { resolve } from 'node:path';
 import { CustomerStore } from '../customer/store.js';
 import { GatewayAudit } from '../gateway/audit.js';
@@ -24,21 +25,23 @@ async function main() {
   if (jwtSecret === serviceKey) throw new Error('Credentials must differ');
   const store = new CustomerStore(process.env.SUPPORTBRIDGE_DB ?? resolve('data/supportbridge.sqlite'));
   let audit: GatewayAudit | undefined;
+  let budget: TokenBudget | undefined;
   let customer: Awaited<ReturnType<typeof startCustomerHttp>> | undefined;
   let gateway: Awaited<ReturnType<typeof startGateway>> | undefined;
   try {
+    budget = new TokenBudget(process.env.BRIDGELAYER_BUDGET_DB ?? resolve('data/token-budget.sqlite'));
     audit = new GatewayAudit(process.env.BRIDGELAYER_AUDIT_DB ?? resolve('data/gateway-audit.sqlite'));
     customer = await startCustomerHttp({ store, serviceKey, port: port('BRIDGELAYER_SERVICE_PORT', 3031) });
     gateway = await startGateway({
-      downstreamUrl: customer.url, serviceKey, jwtSecret, audit, port: port('BRIDGELAYER_GATEWAY_PORT', 3030),
+      downstreamUrl: customer.url, serviceKey, jwtSecret, audit, budget, port: port('BRIDGELAYER_GATEWAY_PORT', 3030),
     });
   } catch (error) {
-    await gateway?.close(); await customer?.close(); audit?.close(); store.close();
+    await gateway?.close(); await customer?.close(); audit?.close(); budget?.close(); store.close();
     throw error;
   }
   let shutdownPromise: Promise<void> | undefined;
   const shutdown = () => shutdownPromise ??= (async () => {
-    await gateway.close(); await customer.close(); audit.close(); store.close();
+    await gateway.close(); await customer.close(); audit.close(); budget.close(); store.close();
     log({ event: 'http.stopped' });
   })();
   const stop = () => { void shutdown().catch(() => { log({ event: 'http.shutdown_failed' }); process.exitCode = 1; }); };

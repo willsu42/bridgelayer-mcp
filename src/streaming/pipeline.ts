@@ -5,7 +5,7 @@ import { parseEvent, type Fixture, type Provider } from './provider.js';
 import { aborted, interruptible, limits, metrics, schedule, StreamFailure, type Metrics, type Schedule } from './contracts.js';
 
 export async function* guardStream(provider: Provider, fixture: Fixture, options: {
-  signal: AbortSignal; stats?: Metrics; schedule?: Schedule;
+  signal: AbortSignal; stats?: Metrics; schedule?: Schedule; onText?: () => void;
 }): AsyncGenerator<string> {
   const stats = options.stats ?? metrics();
   const arm = options.schedule ?? schedule;
@@ -53,6 +53,7 @@ export async function* guardStream(provider: Provider, fixture: Fixture, options
           control.signal.throwIfAborted();
           return;
         }
+        if (value.text.trim()) options.onText?.();
         for (const text of redactor.push(value.text)) {
           control.signal.throwIfAborted();
           yield record(text);

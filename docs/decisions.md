@@ -70,3 +70,11 @@ No new dependency, database schema, model, or token-budget mechanism was introdu
 ## Task 3 closeout — October 29, 2026
 
 Verified existing GitHub Actions runs for implementation `6eb5604` and current revision `b0ef476`: both Node 22/24 jobs passed clean installation and `npm run check`. [TASK3_CLOSEOUT.md](TASK3_CLOSEOUT.md) records full commit IDs, run/job links, local evidence dates, and scope boundaries. Task 3 acceptance is complete; Task 4 design is next. This closeout changes documentation only and does not expand the email-only mock-provider scope.
+
+## Task 4 — Token reservations and bounded fallback, November 1, 2026
+
+The user requested Task 4 development. Adopt the roadmap defaults of 50,000 tokens per authenticated tenant over sixty seconds and a three-second first-usable-text deadline. Start with fixed synthetic input/output allowances and deterministic providers, preserving the earlier decision to defer live model integration. Use a separate `/resilient/stream` route and SQLite ledger so the existing Task 3 fixture contract and customer schema remain compatible.
+
+Active reservations count in full regardless of the historical window. Known terminal usage replaces the reservation; missing usage charges it in full. A 120-second active lease exceeds the thirty-second overall request deadline, and expired leases become conservative unknown charges on the next ledger operation. One local SQLite transaction admits each attempt; backup admission follows primary cancellation and settlement. Unknown primary cost may therefore prevent fallback. Ledger failures never authorize a provider call.
+
+Fallback is limited to one backup before any output, on primary rate limit or first-text timeout. Useful-text stalls and errors after output fail without switching models. Reuse the guardrail with fresh per-attempt state, and wait for handler settlement during gateway shutdown. [The walkthrough](04-token-budgets-and-fallback-walkthrough.md) defines exact policies and limits; [progress](TASK4_PROGRESS.md) records local evidence. Remote Task 4 CI remains unverified.

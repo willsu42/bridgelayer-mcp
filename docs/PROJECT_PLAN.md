@@ -11,7 +11,7 @@ The four workstreams remain appropriate to the current architecture. Phase commi
 - **Missing:** absent and not committed as an implementation milestone.
 - **Planned:** documented future functionality with no implementation.
 
-“In Progress” below identifies ongoing work, not intentions. Task 2 is complete, including environment verification and remote CI evidence recorded in the [October 27 closeout](TASK2_CLOSEOUT.md). Task 3 is complete within its email-only mock-provider scope, with remote CI verified in the [October 29 closeout](TASK3_CLOSEOUT.md). Task 4 has not started.
+“In Progress” below identifies ongoing work, not intentions. Task 2 is complete, including environment verification and remote CI evidence recorded in the [October 27 closeout](TASK2_CLOSEOUT.md). Task 3 is complete within its email-only mock-provider scope, with remote CI verified in the [October 29 closeout](TASK3_CLOSEOUT.md). Task 4 is implemented locally as of November 1; its remote CI remains pending.
 
 ## Documentation status matrix
 
@@ -33,7 +33,7 @@ Pre-September 11 attribution uses the developer's statement and September 8 insp
 | Verified remote CI results | Implemented evidence | Not established | Successful existing run inspected October 27; see closeout | — |
 | HTTP security gateway / authentication | Implemented | No | Signed demo tokens, role policy, separate downstream credentials | Production OAuth outside current scope |
 | Streaming PII guardrail | Implemented | No | Email-only mock pipeline and authenticated route; local and remote Node 22/24 verification complete | Other PII/live provider integrations remain separate |
-| Token limiter / model fallback | Planned | No | Later phase | Reservations and routing |
+| Token limiter / model fallback | Implemented locally | No | SQLite tenant reservations and one pre-output fallback with deterministic providers | Remote CI; live model integration is separate |
 | LLM calls / autonomous agents | Missing | No | Out of initial scope | Candidate extension |
 | React console | Planned | No | Later phase | Backend-driven demo UI |
 | Hosted deployment / external customer APIs | Missing | No evidence | Local runbook only | Separate decision |
@@ -93,19 +93,17 @@ Additional PII formats and live provider adapters are separate decisions, not op
 
 ### Existing
 
-SQLite is available infrastructure. There are no budget tables, reservation logic, usage reconciliation, provider calls, or routing/fallback implementation.
+Task 4 implements a separate `/resilient/stream` route using authenticated JWT tenants, atomic SQLite reservations, a 50,000-token rolling sixty-second allowance, and conservative reconciliation of missing usage. Active leases last 120 seconds independently of the historical usage window; restart recovery and exact expiry are tested. A separate ledger file preserves existing customer/audit schemas.
+
+Primary 429 or a three-second first-usable-text timeout can trigger one backup before any output. Primary cancellation and settlement precede backup admission. Useful-text stalls, malformed data, cancellation, ledger errors, and failures after output do not trigger fallback. Both attempts pass through fresh Task 3 guardrail state. Token reports and providers are deterministic mocks; no real model usage is measured.
 
 ### In Progress
 
-None; outside the initial September 11 phase delivery.
+Implementation and local validation are complete; remote Node 22/24 CI for the Task 4 revision remains pending. On November 1, type checking and all 66 tests/subtests passed on Node 22.23.4 and 24.22.1, and all four demos passed on Node 24. See [TASK4_PROGRESS.md](TASK4_PROGRESS.md).
 
 ### Planned
 
-The existing roadmap proposes a per-tenant rolling 60-second budget, initially 50,000 tokens. Authenticate tenant identity rather than accepting an arbitrary request field. Reserve estimated input plus output allowance atomically before dispatch, reconcile actual usage, and track attempts. Separate live reservation lifetimes from historical usage expiry so long streams retain their reservations. Define a conservative policy for unknown usage.
-
-The proposed timeout is 3,000 ms until first usable upstream text. A primary 429 or qualifying timeout would cancel the primary and allow one backup attempt before output reaches the client. Define a separate policy for stalls after output begins; never silently join partial primary output to a new backup answer. These values and policies require design confirmation before implementation.
-
-Acceptance: test parallel admissions, exact window boundaries, cleanup, restart behavior, success/timeout races, late primary responses, backup failure, and errors after streaming begins. Use short SQLite transactions with explicit busy handling; make no multi-host scaling claim.
+Verify actual remote CI after publishing the change through the normal repository workflow. Live provider input estimation, output-limit enforcement, and usage integration are later work. The current [walkthrough](04-token-budgets-and-fallback-walkthrough.md) records window semantics, unknown-usage policy, bounded retries, cancellation, and limits. No multi-host or production-capacity claim is made.
 
 ## Later demonstration and extension candidates
 

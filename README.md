@@ -17,6 +17,7 @@ Customer-support integrations need a clear boundary between incoming requests, a
 | Task 1: customer MCP service | Original stdio server with strict validation, lookup, simulated refunds, SQLite, and rollback tests. |
 | Task 2: HTTP MCP security gateway | Stateless HTTP MCP with signed demo JWTs, role policy, request correlation, and separate downstream credentials. |
 | Task 3: streaming email guardrail | Authenticated `/guardrails/stream` with deterministic mock bytes, bounded incremental redaction, cancellation, and a local demo; local verification and remote Node 22/24 CI are complete. |
+| Task 4: token budgets and fallback | SQLite tenant reservations, usage reconciliation, and one pre-output backup attempt over deterministic model mocks; local Node 22/24 checks pass, remote CI pending. |
 | `get_customer_record` | Takes `customer_id`; returns a fictional record or business error. |
 | `trigger_refund` | Takes `customer_id`, `amount`, `reason`; atomically stores a simulated refund and its success audit. |
 | `admin_health_check` | HTTP-only harmless admin test tool; returns fixed health information without data changes. |
@@ -27,7 +28,7 @@ Customer IDs require five ASCII digits after `CUST-`; extra arguments are reject
 
 ### Planned
 
-**Task 4 remains planned:** token limiting/model fallback. Task 3 is complete for common ASCII email patterns with a mock provider; see its [walkthrough](docs/03-streaming-guardrails-walkthrough.md) and [validation](docs/TASK3_VALIDATION.md). The React support console is also planned. Live agents, real customer APIs, and hosted deployment remain separate extension candidates.
+Tasks 3 and 4 now have local implementations: email-only streaming guardrails and tenant budgets/model fallback over deterministic mocks. Task 3 acceptance is complete; Task 4 awaits remote CI evidence. Live LLM/provider integration, the React console, external customer APIs, and hosted deployment remain separate extensions. See the [Task 4 progress report](docs/TASK4_PROGRESS.md).
 
 ## Architecture
 
@@ -74,6 +75,14 @@ npm run bench:streaming
 
 It accepts predefined synthetic fixtures rather than arbitrary prompts. Email-containing whitespace tokens are replaced as a whole; punctuation may also be removed. Existing customer MCP responses are not passed through this filter. No live LLM or general-purpose PII detection is implemented.
 
+To exercise token accounting and primary/backup behavior:
+
+```sh
+npm run demo:resilience
+```
+
+This demonstrates per-tenant budgets, a primary 429/timeout followed by one backup, and failure without switching models after output. All token counts are synthetic; no live provider is called. See the [Task 4 walkthrough](docs/04-token-budgets-and-fallback-walkthrough.md).
+
 ## Tech stack
 
 Repository pins: TypeScript `7.0.2`, MCP SDK `1.30.0`, Zod `4.5.4`, and `jose` `6.2.12` for JWTs. The application uses Node.js ES modules, built-in HTTP/SQLite, npm, and Node's test runner. No application HTTP framework, React app, or LLM SDK is introduced.
@@ -101,9 +110,11 @@ Gateway: `http://127.0.0.1:3030/mcp`. Protected customer service: port `3031`. S
 
 For persistent stdio operation, use `node dist/src/mcp/stdio.js`. It waits for MCP input, not interactive terminal commands. A host should spawn Node directly; normal npm banners can contaminate protocol stdout.
 
-Naming compatibility: package `supportbridge`, MCP server `supportbridge-customer`, `SUPPORTBRIDGE_DB`, default `data/supportbridge.sqlite`, and `supportbridge.code-workspace` retain their working names. Gateway denials default to `data/gateway-audit.sqlite`. Both database paths are configurable.
+Naming compatibility: package `supportbridge`, MCP server `supportbridge-customer`, `SUPPORTBRIDGE_DB`, default `data/supportbridge.sqlite`, and `supportbridge.code-workspace` retain their working names. Gateway denials default to `data/gateway-audit.sqlite`. Both database paths are configurable. Task 4 adds `data/token-budget.sqlite`, configurable with `BRIDGELAYER_BUDGET_DB`; the persistent launcher enables `/resilient/stream` on the gateway port.
 
 ## Testing
+
+**November 1, 2026:** Task 4 clean installation, local type checking, and **66 tests/subtests** pass on Node **22.23.4** and **24.22.1**; all four demos pass on Node 24. These results include concurrent SQLite admissions and restart/fallback/cancellation cases. Remote CI for the new Task 4 change remains pending; see [validation details](docs/TASK4_PROGRESS.md).
 
 **October 28, 2026:** Task 3 local type checking and **42 tests/subtests** pass on Node **22.23.4** and **24.22.1**. All three demos pass on Node 24; the [validation record](docs/TASK3_VALIDATION.md) includes benchmark results. **October 29:** remote Node 22/24 CI for the Task 3 implementation and current revision was verified successful; see the [closeout and run links](docs/TASK3_CLOSEOUT.md).
 
@@ -131,13 +142,13 @@ See the [decision log](docs/decisions.md) for pinned SDK framing/error details a
 
 Task 1 predates September 11. Scope/documentation reconciliation belongs to the new phase; Task 2 and the restart regression were implemented and validated in this phase, with final scope acceptance and environment verification completed October 27, 2026. Git history has not been rewritten.
 
-Limits: fictional records are shared, without tenant data isolation. Viewers can create simulated refunds; the admin-prefix rule is not real-payment authorization. Requests are never automatically retried; aborting a timeout cannot undo a committed refund. Denial auditing has no automated retention policy. There is no hosted deployment, measured production capacity, token budget, or AI workflow. The streaming guardrail covers documented email patterns only and currently uses deterministic mocks.
+Limits: fictional records are shared, without tenant data isolation. Viewers can create simulated refunds; the admin-prefix rule is not real-payment authorization. Requests are never automatically retried; aborting a timeout cannot undo a committed refund. Denial auditing has no automated retention policy. There is no hosted deployment, measured production capacity, or live AI workflow. Task 4 budgets operate on synthetic provider token reports; they do not measure real model usage. The streaming guardrail covers documented email patterns only and currently uses deterministic mocks.
 
 ## Roadmap and learning
 
 1. Task 1 — implemented; retain stdio compatibility.
 2. Task 2 — complete within the local gateway scope; clean-install/Node 24 checks, demos, and remote Node 22/24 CI are verified.
 3. Task 3 — complete within the email-only mock-provider scope; local checks and remote Node 22/24 CI verified. See the [closeout](docs/TASK3_CLOSEOUT.md) and [progress report](docs/TASK3_PROGRESS.md).
-4. Task 4 — planned token budgets/model fallback.
+4. Task 4 — token budgets/model fallback implemented and locally verified; [remote CI remains pending](docs/TASK4_PROGRESS.md).
 
 Read the [project plan](docs/PROJECT_PLAN.md), [active scope](docs/PROJECT_SCOPE.md), and [development backlog](docs/DEVELOPMENT_PLAN.md). Start code discussion with the [stdio walkthrough](docs/01-mcp-walkthrough.md) and [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). VS Code tasks/debugging and the [handoff](HANDOFF.md) support continuing the explain → agree → implement → demonstrate → practice workflow.

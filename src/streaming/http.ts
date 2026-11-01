@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { header, HttpError, json, validateEndpoint } from '../http/common.js';
-import { verifyToken } from '../gateway/auth.js';
+import { verifyToken, type Identity } from '../gateway/auth.js';
 import type { GatewayAudit } from '../gateway/audit.js';
 import type { LogEvent } from '../logger.js';
-import { aborted, limits, metrics, schedule, StreamFailure, type Schedule } from './contracts.js';
+import { aborted, limits, metrics, schedule, StreamFailure, type Schedule, type Metrics } from './contracts.js';
 import { guardStream } from './pipeline.js';
 import { frame, requestSchema, type Provider } from './provider.js';
 import { mockProvider } from './mock.js';
@@ -60,11 +60,26 @@ export async function writeFrame(res: ServerResponse, value: string, signal: Abo
   });
 }
 
+export type StreamContext = {
+  identity: Identity; requestId: string; signal: AbortSignal; stats: Metrics; schedule: Schedule;
+};
+
 export function createStreamHandler(options: {
   jwtSecret: string; audit: GatewayAudit; emit: (event: LogEvent) => void;
   provider?: Provider; schedule?: Schedule;
 }) {
   const provider = options.provider ?? mockProvider();
+  return createGuardedHandler({ ...options, path: '/guardrails/stream',
+    parse(value) { const parsed = requestSchema.safeParse(value); return parsed.success ? parsed.data : undefined; },
+    stream(request, context) { return guardStream(provider, request.fixture, context); },
+  });
+}
+
+export function createGuardedHandler<T>(options: {
+  jwtSecret: string; audit: GatewayAudit; emit: (event: LogEvent) => void; schedule?: Schedule;
+  path: string; parse: (value: unknown) => T | undefined;
+  stream: (request: T, context: StreamContext) => AsyncIterable<string>;
+}) {
   const arm = options.schedule ?? schedule;
   let active = 0;
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
@@ -79,8 +94,9 @@ export function createStreamHandler(options: {
     res.setHeader('x-request-id', requestId);
     const cancelDeadline = arm(() => control.abort(new StreamFailure('STREAM_TIMEOUT')), limits.totalMs);
     try {
-      validateEndpoint(req, '/guardrails/stream');
-      try { await verifyToken(header(req, 'authorization'), options.jwtSecret); }
+      validateEndpoint(req, options.path);
+      let identity: Identity;
+      try { identity = await verifyToken(header(req, 'authorization'), options.jwtSecret); }
       catch {
         options.audit.deny('INVALID_CREDENTIALS');
         res.setHeader('www-authenticate', 'Bearer realm="bridgelayer"');
@@ -100,13 +116,13 @@ export function createStreamHandler(options: {
       if (active >= limits.streams) throw new RequestFailure(503, 'STREAM_CAPACITY');
       active++; admitted = true;
       res.setTimeout(0); // This route uses an explicit total deadline, including backpressure.
-      const parsed = requestSchema.safeParse(await readBody(req, control.signal, arm));
-      if (!parsed.success) throw new RequestFailure(400, 'INVALID_REQUEST');
+      const parsed = options.parse(await readBody(req, control.signal, arm));
+      if (parsed === undefined) throw new RequestFailure(400, 'INVALID_REQUEST');
       control.signal.throwIfAborted();
       const openHeaders = () => {
         if (!res.headersSent) res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store' });
       };
-      for await (const text of guardStream(provider, parsed.data.fixture, { signal: control.signal, stats, schedule: arm })) {
+      for await (const text of options.stream(parsed, { identity, requestId, signal: control.signal, stats, schedule: arm })) {
         openHeaders();
         const output = frame('delta', { text });
         stats.peak_frame_bytes = Math.max(stats.peak_frame_bytes, Buffer.byteLength(output));
@@ -119,8 +135,9 @@ export function createStreamHandler(options: {
       const failure = control.signal.aborted ? aborted(control.signal) : error;
       const code = failure instanceof StreamFailure || failure instanceof RequestFailure ? failure.code : 'STREAM_FAILED';
       const status = failure instanceof RequestFailure ? failure.status : failure instanceof HttpError ? failure.status :
-        code === 'STREAM_TIMEOUT' ? 504 : 502;
-      outcome = code === 'CANCELLED' ? 'cancelled' : code === 'STREAM_TIMEOUT' ? 'timeout' : status < 500 ? 'rejected' : 'internal_error';
+        code === 'BUDGET_EXHAUSTED' ? 429 : code === 'BUDGET_UNAVAILABLE' ? 503 :
+        (code === 'STREAM_TIMEOUT' || code === 'PROVIDER_TIMEOUT') ? 504 : 502;
+      outcome = code === 'CANCELLED' ? 'cancelled' : (code === 'STREAM_TIMEOUT' || code === 'PROVIDER_TIMEOUT') ? 'timeout' : status < 500 ? 'rejected' : 'internal_error';
       control.abort(new StreamFailure('CANCELLED'));
       if (res.destroyed || code === 'CANCELLED') { if (!res.destroyed) res.destroy(); return; }
       if (res.headersSent) {
@@ -135,7 +152,7 @@ export function createStreamHandler(options: {
       cancelDeadline(); res.off('close', close); control.abort(new StreamFailure('CANCELLED'));
       if (!res.destroyed) res.setTimeout(15_000); // Restore the shared listener's idle timeout.
       if (admitted) active--;
-      options.emit({ event: 'stream.request', request_id: requestId, outcome,
+      options.emit({ event: options.path === '/guardrails/stream' ? 'stream.request' : 'resilience.request', request_id: requestId, outcome,
         duration_ms: Math.round((performance.now() - started) * 100) / 100, ...stats });
     }
   };

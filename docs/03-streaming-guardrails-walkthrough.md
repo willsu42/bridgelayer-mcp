@@ -1,6 +1,6 @@
 # Task 3 — Email guardrails over a byte stream
 
-Implemented locally October 28, 2026. The user selected email addresses only. This service uses synthetic fixtures and an injected mock provider; it does not call an LLM or sanitize existing customer MCP results. Task 4's token budgets and fallback are not implemented.
+Implemented locally October 28, 2026. The user selected email addresses only. This service uses synthetic fixtures and an injected mock provider; it does not call an LLM or sanitize existing customer MCP results. Task 4 now provides token budgets and fallback on a separate `/resilient/stream` route; see its [walkthrough](04-token-budgets-and-fallback-walkthrough.md).
 
 ## Run it
 

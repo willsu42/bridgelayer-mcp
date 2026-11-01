@@ -133,3 +133,7 @@ Task 2 is closed: fresh-install/recommended-runtime/remote-CI verification is re
 ## Next phase — Task 3, October 28, 2026
 
 The email-only [Task 3 plan](TASK3_PLAN.md) was followed by local implementation: mock byte source, parser/redactor pipeline, authenticated streaming route, tests, demo, and benchmark. See [validation](TASK3_VALIDATION.md) for local Node 22/24 results and the [October 29 closeout](TASK3_CLOSEOUT.md) for successful remote Node 22/24 CI. All Task 3 acceptance items are complete within the agreed email-only mock-provider scope. The September backlog above and Task 2 closeout remain historical scope records. Task 4, live LLMs, additional PII formats, UI, and hosting have not started.
+
+## Next phase — Task 4, November 1, 2026
+
+Token budgets and model fallback are implemented locally. The [Task 4 walkthrough](04-token-budgets-and-fallback-walkthrough.md) records the adopted defaults and lifecycle contracts; [TASK4_PROGRESS.md](TASK4_PROGRESS.md) records 66 passing tests/subtests on Node 22/24, four passing demos on Node 24, and the remaining remote CI gate. This phase adds a separate budget ledger and streaming route without changing customer schemas. Live LLMs, additional PII formats, UI, and hosting remain separate work.

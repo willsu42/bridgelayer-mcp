@@ -1,6 +1,6 @@
 # BridgeLayer — Architecture
 
-Status after Task 3 closeout, October 29, 2026; see [Task 3 verification](TASK3_VALIDATION.md) and the historical [Task 2 closeout](TASK2_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are complete. Task 3 is complete within its email-only mock-provider scope, including verified remote CI; Task 4 remains planned.
+Status after local Task 4 implementation, November 1, 2026; see [Task 3 verification](TASK3_VALIDATION.md) and the historical [Task 2 closeout](TASK2_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are complete. Task 3 is complete within its email-only mock-provider scope, including verified remote CI; Task 4 is implemented locally with remote CI pending.
 
 ## ✅ Existing request paths
 
@@ -66,13 +66,20 @@ SQLite calls are synchronous; long statements/busy waits can block the event loo
 
 The gateway additionally routes `POST /guardrails/stream` to [streaming/http.ts](../src/streaming/http.ts). It shares JWT and Host/Origin checks but uses a strict fixture request and ordinary SSE responses, not MCP envelopes. A deterministic in-process provider feeds byte decoding → SSE/JSON validation → bounded email-token inspection → newly serialized safe output. Only this route is redacted; customer MCP records retain their original semantics.
 
-Each stream owns its state and cancellation controller. Four requests may be admitted per process. Provider reads stop during output backpressure; disconnect, timeout, and shutdown abort the source. No text or raw provider errors are logged. Limits, false-positive/false-negative boundaries, and the mock-adapter contract are in the [walkthrough](03-streaming-guardrails-walkthrough.md); local Node 22/24 evidence and measurements are in [validation](TASK3_VALIDATION.md). No live LLM calls or token accounting exist.
+Each stream owns its state and cancellation controller. Four requests may be admitted per process. Provider reads stop during output backpressure; disconnect, timeout, and shutdown abort the source. No text or raw provider errors are logged. Limits, false-positive/false-negative boundaries, and the mock-adapter contract are in the [walkthrough](03-streaming-guardrails-walkthrough.md); local Node 22/24 evidence and measurements are in [validation](TASK3_VALIDATION.md). No live LLM calls exist. Token accounting is available on the separate Task 4 route described below.
+
+## ✅ Local Task 4 budget and fallback path
+
+The persistent launcher adds `POST /resilient/stream` and a separate `BRIDGELAYER_BUDGET_DB` (default `data/token-budget.sqlite`). The route reuses streaming HTTP validation/output handling and takes tenant identity only from a verified JWT. Each primary/backup attempt obtains an atomic SQLite reservation before opening a deterministic model mock. Final known usage replaces the reservation; unknown usage retains it in full. Historical charges and live leases have separate lifetimes.
+
+An eligible primary 429 or first-text timeout permits at most one separately admitted backup before output. Every attempt uses fresh Task 3 decoder/parser/redactor state. Cancellation and settlement complete before fallback; the gateway waits for active handlers before closing the budget database on shutdown. A thirty-second deadline spans both attempts. The two streaming routes each have a local four-request cap.
+
+Exact policy, error mapping, restart behavior, and synthetic-token limitations are in the [Task 4 walkthrough](04-token-budgets-and-fallback-walkthrough.md). Local Node 22/24 evidence is in [TASK4_PROGRESS.md](TASK4_PROGRESS.md). The ledger supports atomic access to one local SQLite file, not multi-host distribution. No live model/tokenizer is integrated.
 
 ## 🗓 Planned later components
 
 | Component | Intended role |
 | --- | --- |
-| Task 4: token limiter/model fallback | Tenant usage reservations/reconciliation, concurrent admissions, provider attempt/fallback policy. Existing SQLite is infrastructure only; no budget tables exist. |
 | Live provider adapters | Deterministic mock exists; live provider/model undecided. |
 | React console/application backend | Exercise implemented backend behavior. No UI exists today. |
 | Autonomous agent / external customer APIs / hosting | Separate extension candidates; no selected vendor or implementation. |

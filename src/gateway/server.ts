@@ -1,3 +1,6 @@
+import { createResilientHandler } from '../resilience/http.js';
+import type { TokenBudget } from '../resilience/budget.js';
+import type { ModelProvider } from '../resilience/provider.js';
 import { createStreamHandler } from '../streaming/http.js';
 import type { Provider } from '../streaming/provider.js';
 import type { Schedule } from '../streaming/contracts.js';
@@ -11,6 +14,7 @@ export async function startGateway(options: {
   downstreamUrl: string; serviceKey: string; jwtSecret: string; audit: GatewayAudit;
   port?: number; timeoutMs?: number; logger?: (event: LogEvent) => void;
   streamProvider?: Provider; streamSchedule?: Schedule;
+  budget?: TokenBudget; primaryModel?: ModelProvider; backupModel?: ModelProvider;
 }) {
   secretBytes(options.serviceKey); secretBytes(options.jwtSecret);
   if (options.serviceKey === options.jwtSecret) throw new Error('Use separate gateway and downstream credentials');
@@ -27,7 +31,14 @@ export async function startGateway(options: {
     ...(options.streamProvider ? { provider: options.streamProvider } : {}),
     ...(options.streamSchedule ? { schedule: options.streamSchedule } : {}),
   });
-  return listenLoopback(async (req, res) => {
+  const resilient = options.budget ? createResilientHandler({
+    jwtSecret: options.jwtSecret, audit: options.audit, emit, budget: options.budget,
+    ...(options.primaryModel ? { primary: options.primaryModel } : {}),
+    ...(options.backupModel ? { backup: options.backupModel } : {}),
+    ...(options.streamSchedule ? { schedule: options.streamSchedule } : {}),
+  }) : undefined;
+  const dispatch: Parameters<typeof listenLoopback>[0] = async (req, res) => {
+    if (req.url === '/resilient/stream' && resilient) { await resilient(req, res); return; }
     if (req.url === '/guardrails/stream') { await stream(req, res); return; }
     const started = performance.now();
     let id: string | number | undefined;
@@ -123,5 +134,17 @@ export async function startGateway(options: {
         outcome, duration_ms: Math.round((performance.now() - started) * 100) / 100,
       });
     }
+  };
+  const requests = new Set<Promise<void>>();
+  const running = await listenLoopback((req, res) => {
+    const task = dispatch(req, res);
+    requests.add(task);
+    return task.finally(() => requests.delete(task));
   }, options.port);
+  let closing: Promise<void> | undefined;
+  return { ...running, close: () => closing ??= (async () => {
+    await running.close();
+    // Request cancellation must settle token reservations before the launcher closes SQLite.
+    await Promise.allSettled([...requests]);
+  })() };
 }
