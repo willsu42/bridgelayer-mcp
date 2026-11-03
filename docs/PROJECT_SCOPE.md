@@ -1,4 +1,6 @@
-# BridgeLayer — Active Development Phase Scope
+# BridgeLayer — Initial Development Phase Scope (Historical)
+
+This document preserves the bounded September phase that delivered Task 2. Subsequent Tasks 3–4 were delivered in later milestones. All four prototype tasks are now closed; the current status and scope boundaries are in [PROJECT_CLOSEOUT.md](PROJECT_CLOSEOUT.md).
 
 | Field | Value |
 | --- | --- |
@@ -94,4 +96,4 @@ Those checks preceded Task 2 and remain historical baseline evidence. On Septemb
 
 The initial September 11–24 planning window remains historical context, not a record of daily work or promised completion. The [development backlog](DEVELOPMENT_PLAN.md) distinguishes completed Task 2 acceptance from future operational improvements.
 
-Development continues through explain → agree → implement → demonstrate → practice explaining back in VS Code. Next, review the Task 2 request path and practice explaining its trust boundaries before designing Task 3.
+Development continues through explain → agree → implement → demonstrate → practice explaining back in VS Code. The next step at that phase boundary was reviewing Task 2 before designing Task 3; subsequent milestones and final completion are recorded in the project closeout.

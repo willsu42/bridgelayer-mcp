@@ -1,6 +1,6 @@
 # BridgeLayer — Architecture
 
-Status after local Task 4 implementation, November 1, 2026; see [Task 3 verification](TASK3_VALIDATION.md) and the historical [Task 2 closeout](TASK2_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are complete. Task 3 is complete within its email-only mock-provider scope, including verified remote CI; Task 4 is implemented locally with remote CI pending.
+Status after all-task closeout, November 3, 2026; see the [project overview and final evidence](PROJECT_CLOSEOUT.md). Legend: **✅ Existing**, **🚧 In Progress**, **🗓 Planned**. Tasks 1–2 are complete. Task 3 is complete within its email-only mock-provider scope, including verified remote CI; Task 4 is complete within its deterministic-provider scope, including verified remote CI.
 
 ## ✅ Existing request paths
 
@@ -74,7 +74,7 @@ The persistent launcher adds `POST /resilient/stream` and a separate `BRIDGELAYE
 
 An eligible primary 429 or first-text timeout permits at most one separately admitted backup before output. Every attempt uses fresh Task 3 decoder/parser/redactor state. Cancellation and settlement complete before fallback; the gateway waits for active handlers before closing the budget database on shutdown. A thirty-second deadline spans both attempts. The two streaming routes each have a local four-request cap.
 
-Exact policy, error mapping, restart behavior, and synthetic-token limitations are in the [Task 4 walkthrough](04-token-budgets-and-fallback-walkthrough.md). Local Node 22/24 evidence is in [TASK4_PROGRESS.md](TASK4_PROGRESS.md). The ledger supports atomic access to one local SQLite file, not multi-host distribution. No live model/tokenizer is integrated.
+Exact policy, error mapping, restart behavior, and synthetic-token limitations are in the [Task 4 walkthrough](04-token-budgets-and-fallback-walkthrough.md). Local Node 22/24 evidence is in [TASK4_PROGRESS.md](TASK4_PROGRESS.md); remote verification and completion are recorded in [TASK4_CLOSEOUT.md](TASK4_CLOSEOUT.md). The ledger supports atomic access to one local SQLite file, not multi-host distribution. No live model/tokenizer is integrated.
 
 ## 🗓 Planned later components
 

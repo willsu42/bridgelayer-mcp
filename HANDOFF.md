@@ -4,7 +4,7 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Context for the next session
 
-> Continue from Task 4's locally verified token-budget/fallback implementation. Read docs/TASK4_PROGRESS.md and docs/04-token-budgets-and-fallback-walkthrough.md. Tasks 1–3 remain compatible and Task 3 acceptance is closed. Task 4 uses deterministic model mocks, fixed synthetic token allowances, and no live provider. The next gate is remote Node 22/24 CI for the new revision. Review reservation/settlement/recovery and pre-output fallback before any live adapter work. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and follow explain → agree → implement → demonstrate → practice explaining back.
+> Tasks 1–4 are closed within the agreed prototype scope as of November 3, 2026. Read docs/PROJECT_CLOSEOUT.md and docs/TASK4_CLOSEOUT.md for the project explanation and final evidence. All four tasks remain covered by the final regression suite. Providers and token counts are synthetic; no live model is connected. The final implementation dc381fa passed remote Node 22/24 installation and checks. Review reservation/settlement/recovery and pre-output fallback before any live adapter work. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and follow explain → agree → implement → demonstrate → practice explaining back.
 
 ## Current evidence and limits
 
@@ -16,9 +16,11 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 - All customer records are fictional and refunds are simulated. No actual client engagement is evidenced.
 - October 27, 2026 (Asia/Taipei): Task 2 acceptance is complete. Node 24.22.1 / npm 11.19.1 clean installation, type checking, 23 tests/subtests, and both demos passed. Existing CI for `a744bfd` passed on Node 22 and 24. See [closeout evidence](docs/TASK2_CLOSEOUT.md), including the temporary runtime and cached-install conditions.
 
+- November 3, 2026: all four tasks are closed. Final implementation `dc381fa` passed remote Node 22/24 CI; see [project closeout](docs/PROJECT_CLOSEOUT.md).
+
 ## Next work
 
-Run `npm run demo:resilience` and inspect the [Task 4 walkthrough](docs/04-token-budgets-and-fallback-walkthrough.md). Local Node 22/24 checks pass with 66 tests/subtests and all four demos pass on Node 24; see [TASK4_PROGRESS.md](docs/TASK4_PROGRESS.md). Review/publish through the normal repository workflow and verify the actual remote CI run for Task 4. No commit, push, deployment, or workflow trigger is claimed by the implementation session.
+No agreed task remains open. The [project closeout](docs/PROJECT_CLOSEOUT.md) explains the completed system; [TASK4_CLOSEOUT.md](docs/TASK4_CLOSEOUT.md) links final CI evidence. Local validation has 66 passing tests/subtests on Node 22/24 and four passing demos on Node 24. Decide a new scope before adding live providers, UI, external APIs, or hosting. This documentation closeout did not commit, push, deploy, or trigger a workflow.
 
 Explain why an unknown primary attempt keeps its reservation, why backup requires new admission, why active leases outlive historical usage, and why no fallback can follow emitted output. Live providers, extra PII formats, and UI remain separate scope decisions. Tenant budget isolation does not isolate customer data.
 
@@ -32,4 +34,4 @@ Explain why an unknown primary attempt keeps its reservation, why backup require
 - [Gateway](src/gateway/server.ts), [JWT validation](src/gateway/auth.ts), and [HTTP tests](tests/http.test.ts): Task 2's execution policy, credentials, and failure evidence.
 - [Walkthrough](docs/01-mcp-walkthrough.md): Python comparisons and request tracing.
 
-Open the existing `supportbridge.code-workspace` or project folder. The workspace debugger supports attaching to the demo's server child process. The long-term [plan](docs/PROJECT_PLAN.md) retains four workstreams; later AI/UI work is separate from the active [scope](docs/PROJECT_SCOPE.md).
+Open the existing `supportbridge.code-workspace` or project folder. The workspace debugger supports attaching to the demo's server child process. The long-term [plan](docs/PROJECT_PLAN.md) retains four workstreams; later AI/UI work is separate from the active [initial phase scope](docs/PROJECT_SCOPE.md).

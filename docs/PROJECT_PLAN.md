@@ -1,6 +1,6 @@
 # BridgeLayer — Long-Term Project Plan
 
-BridgeLayer is an independent software and AI development project based on customer-inspired FDE integration scenarios. The personal prototype, previously named SupportBridge, existed before the active professional phase beginning September 11, 2026. This roadmap describes intended engineering work, not a client engagement or a completion record.
+BridgeLayer is an independent software and AI development project based on customer-inspired FDE integration scenarios. The personal prototype, previously named SupportBridge, existed before the active professional phase beginning September 11, 2026. This roadmap separates completed prototype work from optional extensions; it does not describe a client engagement. The [project closeout](PROJECT_CLOSEOUT.md) records completion evidence for Tasks 1–4.
 
 The four workstreams remain appropriate to the current architecture. Phase commitments belong in [PROJECT_SCOPE.md](PROJECT_SCOPE.md); individual work items belong in [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md). [ARCHITECTURE.md](ARCHITECTURE.md) describes implemented boundaries and planned extensions.
 
@@ -11,7 +11,7 @@ The four workstreams remain appropriate to the current architecture. Phase commi
 - **Missing:** absent and not committed as an implementation milestone.
 - **Planned:** documented future functionality with no implementation.
 
-“In Progress” below identifies ongoing work, not intentions. Task 2 is complete, including environment verification and remote CI evidence recorded in the [October 27 closeout](TASK2_CLOSEOUT.md). Task 3 is complete within its email-only mock-provider scope, with remote CI verified in the [October 29 closeout](TASK3_CLOSEOUT.md). Task 4 is implemented locally as of November 1; its remote CI remains pending.
+“In Progress” below identifies ongoing work, not intentions. Task 2 is complete, including environment verification and remote CI evidence recorded in the [October 27 closeout](TASK2_CLOSEOUT.md). Task 3 is complete within its email-only mock-provider scope, with remote CI verified in the [October 29 closeout](TASK3_CLOSEOUT.md). Task 4 is complete within its deterministic-provider scope, with remote CI verified in the [November 3 closeout](TASK4_CLOSEOUT.md). All four agreed prototype tasks are closed.
 
 ## Documentation status matrix
 
@@ -22,18 +22,18 @@ Pre-September 11 attribution uses the developer's statement and September 8 insp
 | MCP server and stdio | Implemented | Yes | Compatibility retained | — |
 | Two customer tools and discovery | Implemented | Yes | HTTP entry point added | — |
 | HTTP admin health test tool | Implemented | No | Added with Task 2; stdio still has two tools | — |
-| Zod validation / error mapping | Implemented | Yes | Preserve contracts | HTTP boundary tests |
+| Zod validation / error mapping | Implemented | Yes | Contracts and HTTP boundary tests verified | — |
 | SQLite and atomic refund/audit writes | Implemented | Yes | Full-restart regression added | — |
 | Separate SQLite denial audit | Implemented | No | Added with Task 2 | Automated retention not implemented |
 | Scripted SDK client | Implemented | Yes | HTTP allowed/denied demo verified | — |
 | Six original stdio tests | Implemented | Yes | Restart coverage strengthened | — |
-| HTTP integration/failure tests | Implemented | No | 23 total tests/subtests pass on Node 24; remote Node 22/24 CI verified | — |
+| Integration/failure tests | Implemented | No | Final suite has 66 tests/subtests locally; remote Node 22/24 CI verified | — |
 | Logging / observability | Partial | Basic logs: yes | Gateway correlation/durations and denial audit added | Centralized metrics not implemented |
-| Node 22/24 CI workflow definition | Implemented | Yes | Both jobs verified successful for a744bfd | — |
-| Verified remote CI results | Implemented evidence | Not established | Successful existing run inspected October 27; see closeout | — |
+| Node 22/24 CI workflow definition | Implemented | Yes | Both jobs verified successful for final implementation dc381fa | — |
+| Verified remote CI results | Implemented evidence | Not established | Final implementation run inspected November 3; see Task 4 closeout | — |
 | HTTP security gateway / authentication | Implemented | No | Signed demo tokens, role policy, separate downstream credentials | Production OAuth outside current scope |
 | Streaming PII guardrail | Implemented | No | Email-only mock pipeline and authenticated route; local and remote Node 22/24 verification complete | Other PII/live provider integrations remain separate |
-| Token limiter / model fallback | Implemented locally | No | SQLite tenant reservations and one pre-output fallback with deterministic providers | Remote CI; live model integration is separate |
+| Token limiter / model fallback | Implemented | No | SQLite tenant reservations and one pre-output fallback; local and remote verification complete | Live model integration is separate |
 | LLM calls / autonomous agents | Missing | No | Out of initial scope | Candidate extension |
 | React console | Planned | No | Later phase | Backend-driven demo UI |
 | Hosted deployment / external customer APIs | Missing | No evidence | Local runbook only | Separate decision |
@@ -99,11 +99,11 @@ Primary 429 or a three-second first-usable-text timeout can trigger one backup b
 
 ### In Progress
 
-Implementation and local validation are complete; remote Node 22/24 CI for the Task 4 revision remains pending. On November 1, type checking and all 66 tests/subtests passed on Node 22.23.4 and 24.22.1, and all four demos passed on Node 24. See [TASK4_PROGRESS.md](TASK4_PROGRESS.md).
+None. Implementation, local validation, and remote Node 22/24 CI are complete; see [TASK4_CLOSEOUT.md](TASK4_CLOSEOUT.md). On November 1, type checking and all 66 tests/subtests passed on Node 22.23.4 and 24.22.1, and all four demos passed on Node 24. See [TASK4_PROGRESS.md](TASK4_PROGRESS.md).
 
 ### Planned
 
-Verify actual remote CI after publishing the change through the normal repository workflow. Live provider input estimation, output-limit enforcement, and usage integration are later work. The current [walkthrough](04-token-budgets-and-fallback-walkthrough.md) records window semantics, unknown-usage policy, bounded retries, cancellation, and limits. No multi-host or production-capacity claim is made.
+Live provider input estimation, output-limit enforcement, and usage integration are optional later work, not open Task 4 acceptance items. The current [walkthrough](04-token-budgets-and-fallback-walkthrough.md) records window semantics, unknown-usage policy, bounded retries, cancellation, and limits. No multi-host or production-capacity claim is made.
 
 ## Later demonstration and extension candidates
 

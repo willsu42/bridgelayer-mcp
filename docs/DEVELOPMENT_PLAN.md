@@ -1,5 +1,7 @@
 # BridgeLayer — September 11 Phase Development Backlog
 
+Current status, November 3, 2026: Tasks 1–4 are closed within the agreed prototype scope; see [PROJECT_CLOSEOUT.md](PROJECT_CLOSEOUT.md). The dated backlog and phase entries below preserve the development sequence.
+
 This backlog implements the planning structure approved for the phase beginning September 11, 2026. The initial sequencing window is September 11–24; dates are planning targets, not promises or records of daily work. [PROJECT_SCOPE.md](PROJECT_SCOPE.md) defines the bounded phase; [PROJECT_PLAN.md](PROJECT_PLAN.md) holds later workstreams.
 
 Documentation reconciliation and Task 2 are implemented. Local verification on September 15, 2026 passed type checking, 23 tests/subtests, and the HTTP demo. The [October 27 closeout](TASK2_CLOSEOUT.md) completes clean-install/Node 24 checks, both demos, and verification of the existing remote Node 22/24 CI results. All D0–D6 acceptance items are complete. Security checks accompanied gateway development rather than being deferred.
@@ -128,12 +130,16 @@ The September 11 documentation baseline recorded six passing tests and the stdio
 
 See [02-http-gateway-walkthrough.md](02-http-gateway-walkthrough.md) for exact configuration/contracts and [http.test.ts](../tests/http.test.ts) for acceptance coverage. The new HTTP demo verifies discovery, lookup/refund, viewer denial, admin success, and missing-token rejection.
 
-Task 2 is closed: fresh-install/recommended-runtime/remote-CI verification is recorded in [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md). Automated audit retention if required and general database contention evaluation remain separate operational improvements. At Task 2 closeout, the next milestone was Task 3 design. The October 28 entry below records its subsequent local implementation; Task 4, UI, live agents, and hosted deployment remain planned or unselected.
+Task 2 is closed: fresh-install/recommended-runtime/remote-CI verification is recorded in [TASK2_CLOSEOUT.md](TASK2_CLOSEOUT.md). Automated audit retention if required and general database contention evaluation remain separate operational improvements. At Task 2 closeout, the next milestone was Task 3 design. The dated entries below record subsequent Task 3 and Task 4 completion; UI, live agents, and hosted deployment remain separate extensions.
 
 ## Next phase — Task 3, October 28, 2026
 
-The email-only [Task 3 plan](TASK3_PLAN.md) was followed by local implementation: mock byte source, parser/redactor pipeline, authenticated streaming route, tests, demo, and benchmark. See [validation](TASK3_VALIDATION.md) for local Node 22/24 results and the [October 29 closeout](TASK3_CLOSEOUT.md) for successful remote Node 22/24 CI. All Task 3 acceptance items are complete within the agreed email-only mock-provider scope. The September backlog above and Task 2 closeout remain historical scope records. Task 4, live LLMs, additional PII formats, UI, and hosting have not started.
+The email-only [Task 3 plan](TASK3_PLAN.md) was followed by local implementation: mock byte source, parser/redactor pipeline, authenticated streaming route, tests, demo, and benchmark. See [validation](TASK3_VALIDATION.md) for local Node 22/24 results and the [October 29 closeout](TASK3_CLOSEOUT.md) for successful remote Node 22/24 CI. All Task 3 acceptance items are complete within the agreed email-only mock-provider scope. The September backlog above and Task 2 closeout remain historical scope records. At that October 28 review, Task 4 had not started. Its subsequent delivery is recorded below; live LLMs, additional PII formats, UI, and hosting remain separate work.
 
 ## Next phase — Task 4, November 1, 2026
 
-Token budgets and model fallback are implemented locally. The [Task 4 walkthrough](04-token-budgets-and-fallback-walkthrough.md) records the adopted defaults and lifecycle contracts; [TASK4_PROGRESS.md](TASK4_PROGRESS.md) records 66 passing tests/subtests on Node 22/24, four passing demos on Node 24, and the remaining remote CI gate. This phase adds a separate budget ledger and streaming route without changing customer schemas. Live LLMs, additional PII formats, UI, and hosting remain separate work.
+Token budgets and model fallback are implemented locally. The [Task 4 walkthrough](04-token-budgets-and-fallback-walkthrough.md) records the adopted defaults and lifecycle contracts; [TASK4_PROGRESS.md](TASK4_PROGRESS.md) records 66 passing tests/subtests on Node 22/24, four passing demos on Node 24, and the remote CI gate subsequently closed in [TASK4_CLOSEOUT.md](TASK4_CLOSEOUT.md). This phase adds a separate budget ledger and streaming route without changing customer schemas. Live LLMs, additional PII formats, UI, and hosting remain separate work.
+
+## All-task closeout — November 3, 2026
+
+Verified Node 22/24 CI for final implementation `dc381fa`, completing Task 4's final acceptance gate. Tasks 1–4 are closed; [PROJECT_CLOSEOUT.md](PROJECT_CLOSEOUT.md) consolidates delivered behavior, evidence, and scope limits. Optional product extensions require a new scope rather than reopening completed prototype milestones.

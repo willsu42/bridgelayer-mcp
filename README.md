@@ -1,6 +1,8 @@
 # BridgeLayer
 
-BridgeLayer is an independent software and AI development project exploring customer-support integrations through MCP. It provides fictional customer lookup and simulated refunds through a TypeScript MCP service, with SQLite persistence and an authenticated HTTP security gateway.
+BridgeLayer is a local backend prototype for controlled customer-support tool access and guarded streaming responses. Scripted clients can look up fictional customers, create simulated refunds, and receive email-redacted text from deterministic providers. An authenticated gateway enforces tool permissions; a separate streaming route adds tenant token budgets and one pre-output backup attempt.
+
+**Tasks 1–4 are complete within the agreed prototype scope as of November 3, 2026.** See the [project overview and closeout](docs/PROJECT_CLOSEOUT.md) for what the system does, how the parts connect, and the final evidence. There is no live LLM, real payment integration, or operator UI.
 
 Developed by **Yu-Chen Su (Will), Independent Software & AI Consultant**. The personal/FDE prototype was previously named SupportBridge and predates the active professional development phase beginning **September 11, 2026**. This is a customer-inspired integration case study, with no evidenced actual client engagement.
 
@@ -17,37 +19,44 @@ Customer-support integrations need a clear boundary between incoming requests, a
 | Task 1: customer MCP service | Original stdio server with strict validation, lookup, simulated refunds, SQLite, and rollback tests. |
 | Task 2: HTTP MCP security gateway | Stateless HTTP MCP with signed demo JWTs, role policy, request correlation, and separate downstream credentials. |
 | Task 3: streaming email guardrail | Authenticated `/guardrails/stream` with deterministic mock bytes, bounded incremental redaction, cancellation, and a local demo; local verification and remote Node 22/24 CI are complete. |
-| Task 4: token budgets and fallback | SQLite tenant reservations, usage reconciliation, and one pre-output backup attempt over deterministic model mocks; local Node 22/24 checks pass, remote CI pending. |
+| Task 4: token budgets and fallback | SQLite tenant reservations, usage reconciliation, and one pre-output backup attempt over deterministic model mocks; local checks and remote Node 22/24 CI are verified. |
 | `get_customer_record` | Takes `customer_id`; returns a fictional record or business error. |
 | `trigger_refund` | Takes `customer_id`, `amount`, `reason`; atomically stores a simulated refund and its success audit. |
 | `admin_health_check` | HTTP-only harmless admin test tool; returns fixed health information without data changes. |
 | Denial audit / diagnostics | Separate SQLite denial records; correlated gateway outcomes and durations; no bearer tokens or tool arguments in diagnostic fields. |
-| Verification / demos | Real stdio and HTTP tests, official SDK clients, fault injection, and separate stdio/HTTP demos. |
+| Verification / demos | 66 tests/subtests, official SDK clients, fault injection, and four demos covering MCP, streaming, and resilience. |
 
 Customer IDs require five ASCII digits after `CUST-`; extra arguments are rejected. Amounts must be finite positive numbers, with no string coercion; the store additionally requires safely representable whole cents. Reasons are trimmed before the ten-character minimum check. Receipts return integer `amount_cents`, USD currency, and simulated status.
 
-### Planned
+### Optional extensions
 
-Tasks 3 and 4 now have local implementations: email-only streaming guardrails and tenant budgets/model fallback over deterministic mocks. Task 3 acceptance is complete; Task 4 awaits remote CI evidence. Live LLM/provider integration, the React console, external customer APIs, and hosted deployment remain separate extensions. See the [Task 4 progress report](docs/TASK4_PROGRESS.md).
+All four agreed tasks are closed. Live LLM/provider integration, a React support console, external customer APIs, and hosted deployment are separate future work; they are not open acceptance items. See the [project closeout](docs/PROJECT_CLOSEOUT.md).
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    C[HTTP MCP client] -->|demo bearer JWT| G[Security gateway]
+    C[Scripted HTTP clients] -->|demo bearer JWT| G[Security gateway]
     G -->|separate service credential| H[Customer HTTP entry point]
     H --> S[Customer handlers / validation / store]
     L[Existing stdio client] --> T[Stdio entry point]
     T --> S
     S --> D[(Customer / refund SQLite)]
     G --> A[(Separate denial SQLite)]
+    G -->|/guardrails/stream| M[Mock streaming fixture]
+    M --> R[Email guardrail]
+    G -->|/resilient/stream| B[Tenant budget and attempt router]
+    B <--> Q[(Token ledger)]
+    B --> P[Primary or backup mock]
+    P --> R
+    R --> O[Safe SSE output]
 ```
 
 Both HTTP listeners bind loopback. The local launcher runs them in one Node process; these are separate HTTP trust boundaries, not OS-process isolation. Each POST has its own SDK transport; there is no shared MCP session state. The original stdio entry point remains available with two tools.
 
 The gateway authenticates every request, leaves authenticated discovery unfiltered, and denies non-admin `admin_` calls before forwarding. Downstream headers are explicitly constructed; the client's bearer token is never passed through.
 
-**No LLM chooses tools:** both demo clients call them explicitly. See [architecture](docs/ARCHITECTURE.md) for boundaries and limitations.
+**No LLM chooses tools:** MCP demo clients call them explicitly. The streaming routes use predefined provider fixtures and do not invoke customer tools. See [architecture](docs/ARCHITECTURE.md) for boundaries and limitations.
 
 ## Example workflow
 
@@ -114,7 +123,7 @@ Naming compatibility: package `supportbridge`, MCP server `supportbridge-custome
 
 ## Testing
 
-**November 1, 2026:** Task 4 clean installation, local type checking, and **66 tests/subtests** pass on Node **22.23.4** and **24.22.1**; all four demos pass on Node 24. These results include concurrent SQLite admissions and restart/fallback/cancellation cases. Remote CI for the new Task 4 change remains pending; see [validation details](docs/TASK4_PROGRESS.md).
+**November 1, 2026:** Task 4 clean installation, local type checking, and **66 tests/subtests** pass on Node **22.23.4** and **24.22.1**; all four demos pass on Node 24. These results include concurrent SQLite admissions and restart/fallback/cancellation cases. **November 3:** the Task 4 implementation revision `dc381fa` was confirmed to pass remote Node 22/24 installation and checks. See [Task 4 closeout and job links](docs/TASK4_CLOSEOUT.md).
 
 **October 28, 2026:** Task 3 local type checking and **42 tests/subtests** pass on Node **22.23.4** and **24.22.1**. All three demos pass on Node 24; the [validation record](docs/TASK3_VALIDATION.md) includes benchmark results. **October 29:** remote Node 22/24 CI for the Task 3 implementation and current revision was verified successful; see the [closeout and run links](docs/TASK3_CLOSEOUT.md).
 
@@ -140,15 +149,17 @@ See the [decision log](docs/decisions.md) for pinned SDK framing/error details a
 
 ## Current development status
 
+**All four prototype tasks are closed.** The [consolidated closeout](docs/PROJECT_CLOSEOUT.md) records scope, final CI evidence, and optional extensions.
+
 Task 1 predates September 11. Scope/documentation reconciliation belongs to the new phase; Task 2 and the restart regression were implemented and validated in this phase, with final scope acceptance and environment verification completed October 27, 2026. Git history has not been rewritten.
 
-Limits: fictional records are shared, without tenant data isolation. Viewers can create simulated refunds; the admin-prefix rule is not real-payment authorization. Requests are never automatically retried; aborting a timeout cannot undo a committed refund. Denial auditing has no automated retention policy. There is no hosted deployment, measured production capacity, or live AI workflow. Task 4 budgets operate on synthetic provider token reports; they do not measure real model usage. The streaming guardrail covers documented email patterns only and currently uses deterministic mocks.
+Limits: fictional records are shared, without tenant data isolation. Viewers can create simulated refunds; the admin-prefix rule is not real-payment authorization. Customer tool calls are never automatically replayed; aborting a timeout cannot undo a committed refund. Model-streaming fallback is limited to one eligible backup attempt before output. Denial auditing has no automated retention policy. There is no hosted deployment, measured production capacity, or live AI workflow. Task 4 budgets operate on synthetic provider token reports; they do not measure real model usage. The streaming guardrail covers documented email patterns only and currently uses deterministic mocks.
 
 ## Roadmap and learning
 
-1. Task 1 — implemented; retain stdio compatibility.
+1. Task 1 — complete; stdio tool behavior is retained and covered by the final regression suite.
 2. Task 2 — complete within the local gateway scope; clean-install/Node 24 checks, demos, and remote Node 22/24 CI are verified.
 3. Task 3 — complete within the email-only mock-provider scope; local checks and remote Node 22/24 CI verified. See the [closeout](docs/TASK3_CLOSEOUT.md) and [progress report](docs/TASK3_PROGRESS.md).
-4. Task 4 — token budgets/model fallback implemented and locally verified; [remote CI remains pending](docs/TASK4_PROGRESS.md).
+4. Task 4 — complete within the deterministic-provider scope; local checks and remote Node 22/24 CI verified. See the [closeout](docs/TASK4_CLOSEOUT.md).
 
-Read the [project plan](docs/PROJECT_PLAN.md), [active scope](docs/PROJECT_SCOPE.md), and [development backlog](docs/DEVELOPMENT_PLAN.md). Start code discussion with the [stdio walkthrough](docs/01-mcp-walkthrough.md) and [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). VS Code tasks/debugging and the [handoff](HANDOFF.md) support continuing the explain → agree → implement → demonstrate → practice workflow.
+Read the [project plan](docs/PROJECT_PLAN.md), [initial phase scope](docs/PROJECT_SCOPE.md), and [development backlog](docs/DEVELOPMENT_PLAN.md). Start code discussion with the [stdio walkthrough](docs/01-mcp-walkthrough.md) and [HTTP walkthrough](docs/02-http-gateway-walkthrough.md). VS Code tasks/debugging and the [handoff](HANDOFF.md) support continuing the explain → agree → implement → demonstrate → practice workflow.

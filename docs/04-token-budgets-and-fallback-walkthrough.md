@@ -1,6 +1,6 @@
 # Task 4 — Tenant token budgets and bounded fallback
 
-Implemented locally November 1, 2026 (Asia/Taipei). This milestone demonstrates budget accounting and provider fallback with deterministic model mocks. No live LLM, tokenizer, API key, or paid request is involved. Remote CI for this change is still pending; see [TASK4_PROGRESS.md](TASK4_PROGRESS.md).
+Implemented locally November 1, 2026 (Asia/Taipei). This milestone demonstrates budget accounting and provider fallback with deterministic model mocks. No live LLM, tokenizer, API key, or paid request is involved. Remote Node 22/24 CI was verified November 3, closing this milestone; see [TASK4_CLOSEOUT.md](TASK4_CLOSEOUT.md).
 
 ## Run the demonstration
 
@@ -110,4 +110,4 @@ After output begins, the same fixed failure code is sent in an `error` SSE event
 - [http.ts](../src/resilience/http.ts): verified tenant identity and the `/resilient/stream` adapter.
 - [budget tests](../tests/budget.test.ts), [routing tests](../tests/resilience.test.ts), [HTTP tests](../tests/resilience-http.test.ts): boundaries, restart, races, isolation, and failure evidence.
 
-The new route reuses the Task 3 HTTP writer and guardrail, with an optional validated-text hook to distinguish provider readiness from safe-output readiness. The original 42 tests/subtests remain part of the suite. Local results and the remaining CI gate are in [TASK4_PROGRESS.md](TASK4_PROGRESS.md).
+The new route reuses the Task 3 HTTP writer and guardrail, with an optional validated-text hook to distinguish provider readiness from safe-output readiness. The original 42 tests/subtests remain part of the suite. Local results are in [TASK4_PROGRESS.md](TASK4_PROGRESS.md); completed remote verification is in [TASK4_CLOSEOUT.md](TASK4_CLOSEOUT.md).
