@@ -6,6 +6,8 @@ BridgeLayer is a local backend prototype for controlled customer-support tool ac
 
 Developed by **Yu-Chen Su (Will), Independent Software & AI Consultant**. The personal/FDE prototype was previously named SupportBridge and predates the active professional development phase beginning **September 11, 2026**. This is a customer-inspired integration case study, with no evidenced actual client engagement.
 
+The English [product brief and business presentation](docs/business/README.md) introduce the prototype and proposed commercial collaboration for potential customers, investors, and partners.
+
 ## Problem being solved
 
 Customer-support integrations need a clear boundary between incoming requests, authenticated callers, permitted operations, business rules, and stored results. BridgeLayer demonstrates those boundaries with discoverable MCP tools and reproducible success/failure cases. The current interface is a developer-operated client; no operator UI or LLM agent is implemented.
