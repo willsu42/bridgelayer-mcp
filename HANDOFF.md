@@ -4,6 +4,8 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Context for the next session
 
+**November 8 update:** Support Copilot Stage A is implemented as additional scope. Run `npm run demo:copilot` and open http://127.0.0.1:3040/. Read [COPILOT_STAGE_A.md](docs/COPILOT_STAGE_A.md) for the English workbench, real gateway lookup, guarded scripted drafts, demo session, cancellation, and reset. Local Node 24 validation passes 74 tests/subtests. No live model or token-budget/fallback integration into the new draft workflow is claimed.
+
 > Tasks 1–4 are closed within the agreed prototype scope as of November 3, 2026. Read docs/PROJECT_CLOSEOUT.md and docs/TASK4_CLOSEOUT.md for the project explanation and final evidence. All four tasks remain covered by the final regression suite. Providers and token counts are synthetic; no live model is connected. The final implementation dc381fa passed remote Node 22/24 installation and checks. Review reservation/settlement/recovery and pre-output fallback before any live adapter work. I am comfortable with Python and learning TypeScript/MCP; use Python comparisons and follow explain → agree → implement → demonstrate → practice explaining back.
 
 ## Current evidence and limits
@@ -20,9 +22,9 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Next work
 
-No agreed task remains open. The [project closeout](docs/PROJECT_CLOSEOUT.md) explains the completed system; [TASK4_CLOSEOUT.md](docs/TASK4_CLOSEOUT.md) links final CI evidence. Local validation has 66 passing tests/subtests on Node 22/24 and four passing demos on Node 24. Decide a new scope before adding live providers, UI, external APIs, or hosting. This documentation closeout did not commit, push, deploy, or trigger a workflow.
+The original four tasks remain closed. The [project closeout](docs/PROJECT_CLOSEOUT.md) and [TASK4_CLOSEOUT.md](docs/TASK4_CLOSEOUT.md) retain historical evidence. Stage A now adds the local browser workflow and has its own [validation record](docs/COPILOT_STAGE_A.md#validation). Stage B would connect a real provider and validated usage accounting. Stage C would add controlled resilience demonstrations and any agreed sharing/deployment work. No commit, push, deployment, or remote CI run is part of Stage A's local verification.
 
-Explain why an unknown primary attempt keeps its reservation, why backup requires new admission, why active leases outlive historical usage, and why no fallback can follow emitted output. Live providers, extra PII formats, and UI remain separate scope decisions. Tenant budget isolation does not isolate customer data.
+Explain why an unknown primary attempt keeps its reservation, why backup requires new admission, why active leases outlive historical usage, and why no fallback can follow emitted output. Live providers and extra PII formats remain future scope. The Stage A local UI is complete. Tenant budget isolation does not isolate customer data.
 
 ## Files to inspect during implementation
 

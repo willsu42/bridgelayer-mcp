@@ -8,8 +8,9 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit",
+    "demo:copilot": "npm run build --silent && node dist/scripts/start-copilot.js",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.web.json",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json --noEmit",
     "start:mcp": "node dist/src/mcp/stdio.js",
     "start:http": "node dist/src/http/main.js",
     "token": "node dist/scripts/token.js",

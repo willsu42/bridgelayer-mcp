@@ -82,3 +82,13 @@ Fallback is limited to one backup before any output, on primary rate limit or fi
 ## All-task closeout — November 3, 2026
 
 The user requested closure of all tasks and a project explanation. Verified final implementation `dc381fa` against GitHub Actions run 41320833908: both Node 22/24 jobs passed `npm ci` and `npm run check`. [TASK4_CLOSEOUT.md](TASK4_CLOSEOUT.md) records exact evidence; [PROJECT_CLOSEOUT.md](PROJECT_CLOSEOUT.md) explains the system and consolidates acceptance for Tasks 1–4. This documentation-only closeout preserves the agreed mock-provider, fictional-data scope. Live models, UI, external integrations, and hosting are separate future work.
+
+## Support Copilot Stage A — November 8, 2026
+
+The user authorized Stage A of the commercial demonstration plan. Add a local English workbench with deterministic customer lookup and response drafting. Use the existing Node HTTP server tools, official MCP client, gateway, and streaming guardrail. Compile browser TypeScript separately without adding dependencies or changing the original fixture routes.
+
+Start the workbench through `demo:copilot`, with fresh in-memory databases and separate random gateway/service credentials. Its session bootstrap grants only the fixed local demo viewer identity in an HttpOnly, SameSite=Strict cookie. Require exact same-origin POSTs, enforce strict request schemas, and limit active drafts to four. This intentionally convenient loopback bootstrap is not a production login. It must not be exposed as a public authentication service.
+
+Lookup must succeed through the gateway before scripted generation starts. Select only ID, name, and plan from the result. Use a separately labeled sample email to demonstrate the existing output guardrail. Events describe observed workflow steps, never model reasoning. Cancel the source on stop, reset, disconnect, or shutdown, and suppress stale browser updates after reset.
+
+Stage A has no live model, real token usage, or draft-route fallback. Task 4 remains a separate demonstration until a later integration phase establishes estimation and settlement for real generation inputs. The [Stage A walkthrough](COPILOT_STAGE_A.md) records current scope and local validation. Earlier task closeouts retain their dated scope and CI attribution.

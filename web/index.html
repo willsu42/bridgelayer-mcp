@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BridgeLayer Support Copilot. A local, scripted demonstration of customer lookup and guarded response drafting.">
+  <title>BridgeLayer Support Copilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#workspace">Skip to workspace</a>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="BridgeLayer home"><span class="brand-mark" aria-hidden="true">B</span><span>BridgeLayer<span class="brand-sub">SUPPORT COPILOT</span></span></a>
+    <div class="header-actions"><span class="mode"><span aria-hidden="true"></span>Scripted demo</span><button id="reset" class="button quiet" type="button" disabled>Reset demo</button></div>
+  </header>
+  <main id="workspace">
+    <div class="intro"><div><p class="eyebrow">CUSTOMER SUPPORT WORKSPACE</p><h1>A considered reply, with controls.</h1><p>Look up a customer. Prepare a draft. Review before sharing.</p></div><p class="local-note">LOCAL DEMONSTRATION<br><strong>Fictional data. No live AI.</strong></p></div>
+    <div class="workspace">
+      <aside class="context panel" aria-labelledby="context-title">
+        <div class="section-heading"><span class="step-number">01</span><h2 id="context-title">Set the context</h2></div>
+        <label for="customer">Customer</label><select id="customer" disabled><option>Loading customers…</option></select>
+        <p class="field-note">Fictional demo profiles. Details are verified through MCP when you generate.</p>
+        <fieldset id="cases" disabled><legend>Choose a support case</legend><div id="case-list" class="case-list"></div></fieldset>
+        <div class="guard-option"><input id="sample-email" type="checkbox" checked><label for="sample-email">Include a sample email</label><p>The scripted reply includes a fictional address to demonstrate output redaction.</p></div>
+        <div class="scope-note"><span class="scope-icon" aria-hidden="true">i</span><p>Drafting only. This demo does not send messages or issue refunds.</p></div>
+      </aside>
+      <section class="composer panel" aria-labelledby="composer-title">
+        <div class="section-heading"><span class="step-number">02</span><h2 id="composer-title">Prepare a response</h2></div>
+        <form id="draft-form">
+          <div class="label-row"><label for="issue">Customer's question</label><span id="issue-count">0 / 1,200</span></div>
+          <textarea id="issue" rows="4" minlength="10" maxlength="1200" required disabled placeholder="Describe the customer's question…"></textarea>
+          <div class="generate-row"><p>Uses the selected case template and<br>the customer's verified name and plan.</p><button id="generate" class="button primary" type="submit" disabled>Generate draft <span aria-hidden="true">↗</span></button><button id="stop" class="button stop" type="button" hidden>Stop generation</button></div>
+        </form>
+        <div class="draft-heading"><h3>Response draft</h3><span id="draft-status" class="state-tag">Ready when you are</span></div>
+        <div id="notice" class="notice" role="status" aria-live="polite">Connecting to the local demo…</div>
+        <div id="empty-state" class="empty-state"><span class="document-symbol" aria-hidden="true">≡</span><h3>A clear starting point</h3><p>Your draft will appear here as it streams.<br>You can edit it before copying.</p><span class="empty-caption">CUSTOMER LOOKUP + EMAIL GUARDRAIL</span></div>
+        <label class="sr-only" for="draft">Editable response draft</label><textarea id="draft" rows="14" hidden spellcheck="true"></textarea>
+        <div class="draft-footer"><p id="review-note">Review every draft before sharing.</p><button id="copy" class="button secondary" type="button" disabled>Copy draft</button></div>
+      </section>
+      <aside class="activity panel" aria-labelledby="activity-title">
+        <div class="section-heading"><span class="step-number">03</span><h2 id="activity-title">Follow the process</h2></div>
+        <p class="field-note">Events from this request, as they happen.</p>
+        <ol id="events" class="timeline" aria-label="Request activity"><li class="waiting">Waiting for your first draft</li></ol>
+        <div class="verified"><p class="eyebrow">VERIFIED CUSTOMER</p><p id="verified-name">No lookup yet</p><p id="verified-plan" class="field-note">Generate a draft to retrieve the profile.</p></div>
+        <dl class="metrics"><div><dt>Email tokens redacted</dt><dd id="redactions">—</dd></div><div><dt>Output bytes</dt><dd id="output-bytes">—</dd></div><div><dt>Elapsed time</dt><dd id="elapsed">—</dd></div></dl>
+        <div class="provider-note"><span class="mode small"><span aria-hidden="true"></span>Scripted provider</span><p>Deterministic templates.<br>No model tokens or API charges.</p></div>
+      </aside>
+    </div>
+    <footer class="page-footer"><span>BridgeLayer <span class="footer-divider">/</span> Developed by <strong>Yu-Chen Su</strong></span><span>Email protection covers supported formats in generated output.</span></footer>
+  </main>
+</body>
+</html>

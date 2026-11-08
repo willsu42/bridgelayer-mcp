@@ -1,8 +1,8 @@
 # BridgeLayer
 
-BridgeLayer is a local backend prototype for controlled customer-support tool access and guarded streaming responses. Scripted clients can look up fictional customers, create simulated refunds, and receive email-redacted text from deterministic providers. An authenticated gateway enforces tool permissions; a separate streaming route adds tenant token budgets and one pre-output backup attempt.
+BridgeLayer is a local prototype for controlled customer-support tool access and guarded streaming responses. Its Support Copilot workbench looks up fictional customers through MCP and streams editable, email-redacted drafts from deterministic templates. The original scripted clients also demonstrate simulated refunds, tool permissions, and a separate streaming route with tenant token budgets and one pre-output backup attempt.
 
-**Tasks 1–4 are complete within the agreed prototype scope as of November 3, 2026.** See the [project overview and closeout](docs/PROJECT_CLOSEOUT.md) for what the system does, how the parts connect, and the final evidence. There is no live LLM, real payment integration, or operator UI.
+**Tasks 1–4 are complete within the agreed prototype scope as of November 3, 2026.** The additional [Support Copilot Stage A](docs/COPILOT_STAGE_A.md), implemented November 8, adds a local English workbench. There is no live LLM or real payment integration. The [original project closeout](docs/PROJECT_CLOSEOUT.md) retains the four-task scope and evidence.
 
 Developed by **Yu-Chen Su (Will), Independent Software & AI Consultant**. The personal/FDE prototype was previously named SupportBridge and predates the active professional development phase beginning **September 11, 2026**. This is a customer-inspired integration case study, with no evidenced actual client engagement.
 
@@ -10,7 +10,17 @@ The English [product brief and business presentation](docs/business/README.md) i
 
 ## Problem being solved
 
-Customer-support integrations need a clear boundary between incoming requests, authenticated callers, permitted operations, business rules, and stored results. BridgeLayer demonstrates those boundaries with discoverable MCP tools and reproducible success/failure cases. The current interface is a developer-operated client; no operator UI or LLM agent is implemented.
+Customer-support integrations need a clear boundary between incoming requests, authenticated callers, permitted operations, business rules, and stored results. BridgeLayer demonstrates those boundaries with discoverable MCP tools and reproducible success/failure cases. The local workbench now connects lookup and scripted drafting in a browser. No LLM agent is implemented.
+
+## Open the Support Copilot demo
+
+With Node 24 and dependencies installed:
+
+```sh
+npm run demo:copilot
+```
+
+Open **http://127.0.0.1:3040/**. Select a fictional customer and case, generate a draft, then edit or copy it. Stop generation or reset the demo at any time. The workbench shows actual lookup events and email-redaction metrics. It uses fresh in-memory demo data and requires no API key. Press Ctrl+C to stop. See the [Stage A walkthrough](docs/COPILOT_STAGE_A.md) for its architecture, demo script, limits, and validation.
 
 ## Current capabilities
 
@@ -18,6 +28,7 @@ Customer-support integrations need a clear boundary between incoming requests, a
 
 | Capability | Implemented behavior |
 | --- | --- |
+| Support Copilot Stage A | English browser workbench, actual MCP lookup, guarded scripted drafting, editing/copying, cancellation, reset, and request activity. Local Node 24 checks pass with 74 tests/subtests. |
 | Task 1: customer MCP service | Original stdio server with strict validation, lookup, simulated refunds, SQLite, and rollback tests. |
 | Task 2: HTTP MCP security gateway | Stateless HTTP MCP with signed demo JWTs, role policy, request correlation, and separate downstream credentials. |
 | Task 3: streaming email guardrail | Authenticated `/guardrails/stream` with deterministic mock bytes, bounded incremental redaction, cancellation, and a local demo; local verification and remote Node 22/24 CI are complete. |
@@ -32,7 +43,7 @@ Customer IDs require five ASCII digits after `CUST-`; extra arguments are reject
 
 ### Optional extensions
 
-All four agreed tasks are closed. Live LLM/provider integration, a React support console, external customer APIs, and hosted deployment are separate future work; they are not open acceptance items. See the [project closeout](docs/PROJECT_CLOSEOUT.md).
+All four original tasks are closed, and the local Stage A workbench is implemented. Live LLM/provider integration, external customer APIs, and hosted deployment remain future work. Stage A does not integrate token budgets or provider fallback into drafting; those remain in the separate Task 4 demonstration.
 
 ## Architecture
 
@@ -58,7 +69,7 @@ Both HTTP listeners bind loopback. The local launcher runs them in one Node proc
 
 The gateway authenticates every request, leaves authenticated discovery unfiltered, and denies non-admin `admin_` calls before forwarding. Downstream headers are explicitly constructed; the client's bearer token is never passed through.
 
-**No LLM chooses tools:** MCP demo clients call them explicitly. The streaming routes use predefined provider fixtures and do not invoke customer tools. See [architecture](docs/ARCHITECTURE.md) for boundaries and limitations.
+**No LLM chooses tools:** MCP demo clients call them explicitly. The original streaming routes use predefined provider fixtures and do not invoke customer tools. The additional workbench workflow explicitly looks up one customer before generating its scripted draft. See [Stage A architecture](docs/COPILOT_STAGE_A.md#request-flow) for that path and [the original architecture](docs/ARCHITECTURE.md) for the earlier routes.
 
 ## Example workflow
 
@@ -96,7 +107,7 @@ This demonstrates per-tenant budgets, a primary 429/timeout followed by one back
 
 ## Tech stack
 
-Repository pins: TypeScript `7.0.2`, MCP SDK `1.30.0`, Zod `4.5.4`, and `jose` `6.2.12` for JWTs. The application uses Node.js ES modules, built-in HTTP/SQLite, npm, and Node's test runner. No application HTTP framework, React app, or LLM SDK is introduced.
+Repository pins: TypeScript `7.0.2`, MCP SDK `1.30.0`, Zod `4.5.4`, and `jose` `6.2.12` for JWTs. The application uses Node.js ES modules, built-in HTTP/SQLite, npm, and Node's test runner. The workbench uses HTML/CSS and browser TypeScript compiled with `tsconfig.web.json`. No additional dependency, application HTTP framework, React app, or LLM SDK is introduced.
 
 ## Setup
 
@@ -124,6 +135,8 @@ For persistent stdio operation, use `node dist/src/mcp/stdio.js`. It waits for M
 Naming compatibility: package `supportbridge`, MCP server `supportbridge-customer`, `SUPPORTBRIDGE_DB`, default `data/supportbridge.sqlite`, and `supportbridge.code-workspace` retain their working names. Gateway denials default to `data/gateway-audit.sqlite`. Both database paths are configurable. Task 4 adds `data/token-budget.sqlite`, configurable with `BRIDGELAYER_BUDGET_DB`; the persistent launcher enables `/resilient/stream` on the gateway port.
 
 ## Testing
+
+**November 8, 2026:** Support Copilot Stage A passes server/browser type checking, builds, and **74 tests/subtests** on local Node **24.22.1**. Browser checks cover generating, editing, copying, stopping, resetting, error recovery, and mobile layout. See [Stage A validation](docs/COPILOT_STAGE_A.md#validation). The earlier CI evidence below belongs to the four-task implementation, not this new work.
 
 **November 1, 2026:** Task 4 clean installation, local type checking, and **66 tests/subtests** pass on Node **22.23.4** and **24.22.1**; all four demos pass on Node 24. These results include concurrent SQLite admissions and restart/fallback/cancellation cases. **November 3:** the Task 4 implementation revision `dc381fa` was confirmed to pass remote Node 22/24 installation and checks. See [Task 4 closeout and job links](docs/TASK4_CLOSEOUT.md).
 
