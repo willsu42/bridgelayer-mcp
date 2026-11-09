@@ -92,3 +92,14 @@ Start the workbench through `demo:copilot`, with fresh in-memory databases and s
 Lookup must succeed through the gateway before scripted generation starts. Select only ID, name, and plan from the result. Use a separately labeled sample email to demonstrate the existing output guardrail. Events describe observed workflow steps, never model reasoning. Cancel the source on stop, reset, disconnect, or shutdown, and suppress stale browser updates after reset.
 
 Stage A has no live model, real token usage, or draft-route fallback. Task 4 remains a separate demonstration until a later integration phase establishes estimation and settlement for real generation inputs. The [Stage A walkthrough](COPILOT_STAGE_A.md) records current scope and local validation. Earlier task closeouts retain their dated scope and CI attribution.
+
+
+## Support Copilot Stage B — November 9, 2026
+
+The user authorized Groq Free-plan integration. Use the fixed Groq Chat Completions endpoint through native Node fetch, with no SDK retries, redirects, remote model tools, or implicit provider fallback. Start with `openai/gpt-oss-20b`; the server configuration also accepts `openai/gpt-oss-120b`. Both use low reasoning effort and `include_reasoning: false`. The adapter only forwards content deltas, normalizes bounded SSE, and requires a terminal finish reason plus `[DONE]`. Length-limited output remains incomplete.
+
+Keep Scripted as the default and expose Live only when the server has a key. Free-plan enrollment and remaining quota belong to the Groq account; application code cannot establish billing status. Load secrets only from the server environment or ignored `.env`. No account upgrade, payment configuration, deployment, or external message sending is part of this change.
+
+Reuse the Task 4 SQLite ledger with a distinct persistent file and an 8,000-token/sixty-second policy for the fixed authenticated demo tenant. Reserve UTF-8 message content bytes plus a 256-token chat-template margin and a 1,024-token output allowance before provider I/O. This conservative estimate is not a tokenizer result or a guaranteed provider quota bound. Settle terminal validated usage; unknown, interrupted, or malformed usage retains the full reservation. Over-reports are charged before failing closed. A successful response cannot precede settlement. Original fixture routers retain their existing three-second read timeout; live drafting allows ten seconds per read within the existing thirty-second total deadline.
+
+The model receives verified customer name/plan and the question as data. Customer-record email is excluded. Output email filtering does not mask the input sent to Groq. The model has no tools and cannot send messages, approve refunds, or modify records; factual reliability still requires human review and a real-model evaluation. [Stage B documentation](COPILOT_STAGE_B.md) records setup, evidence, and outstanding live verification.

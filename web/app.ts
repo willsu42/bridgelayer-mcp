@@ -1,9 +1,10 @@
-type Catalog = { customers: { id: string; name: string }[]; cases: { id: string; title: string; description: string; issue: string }[] };
+type Catalog = { live: { available: boolean; provider: string; model: string | null }; customers: { id: string; name: string }[]; cases: { id: string; title: string; description: string; issue: string }[] };
 function element<T extends HTMLElement>(id: string): T {
   const value = document.getElementById(id);
   if (!value) throw new Error(`Missing element ${id}`);
   return value as T;
 }
+const mode = element<HTMLSelectElement>('generation-mode');
 const customer = element<HTMLSelectElement>('customer');
 const issue = element<HTMLTextAreaElement>('issue');
 const draft = element<HTMLTextAreaElement>('draft');
@@ -26,7 +27,7 @@ function message(text: string, kind = '') { notice.textContent = text; notice.cl
 function count() { element('issue-count').textContent = `${issue.value.length.toLocaleString('en-US')} / 1,200`; }
 function setBusy(value: boolean) {
   busy = value;
-  customer.disabled = issue.disabled = cases.disabled = sampleEmail.disabled = value || !catalog;
+  mode.disabled = customer.disabled = issue.disabled = cases.disabled = sampleEmail.disabled = value || !catalog;
   generate.disabled = value || !catalog; generate.hidden = value;
   stop.hidden = !value; draft.readOnly = value;
   copy.disabled = value || !draft.value.trim();
@@ -42,10 +43,21 @@ function clearOutput() {
   draft.value = ''; draft.hidden = true; element('empty-state').hidden = false;
   events.replaceChildren(); const waiting = document.createElement('li'); waiting.className = 'waiting'; waiting.textContent = 'Waiting for your first draft'; events.append(waiting);
   element('verified-name').textContent = 'No lookup yet'; element('verified-plan').textContent = 'Generate a draft to retrieve the profile.';
-  for (const id of ['redactions', 'output-bytes', 'elapsed']) element(id).textContent = '—';
+  for (const id of ['redactions', 'output-bytes', 'elapsed', 'model-tokens', 'budget-available']) element(id).textContent = '—';
   element('draft-status').textContent = 'Ready when you are';
   element('review-note').textContent = 'Review every draft before sharing.';
   copy.textContent = 'Copy draft'; copy.disabled = true;
+}
+function updateMode() {
+  const live = mode.value === 'live';
+  element('mode-badge').textContent = live ? 'Live AI · Groq' : 'Scripted demo';
+  element('data-note').textContent = live ? 'Fictional data. Cloud AI.' : 'Fictional data. No live AI.';
+  element('mode-note').textContent = live
+    ? 'Your question and the verified name and plan are sent to Groq. Use fictional information only. Email protection applies to generated output.'
+    : catalog?.live.available ? 'Live AI is configured. Select it to generate with Groq.' : 'Live AI is unavailable. Set GROQ_API_KEY in the server’s .env file and restart.';
+  element('generation-note').textContent = live ? 'Uses your question and the verified profile to generate a reply with AI.' : 'Uses the selected case template and the customer’s verified name and plan.';
+  element('provider-label').textContent = live ? `Groq · ${catalog?.live.model ?? ''}` : 'Scripted provider';
+  element('provider-note').textContent = live ? 'Use a Groq Free plan account. Limits vary by account. The local token budget is separate from Groq’s quota.' : 'Deterministic templates. No model tokens or API charges.';
 }
 function selectCase(id: string) {
   const selected = catalog?.cases.find(item => item.id === id);
@@ -65,7 +77,17 @@ const errors: Record<string, string> = {
   STREAM_CAPACITY: 'All four draft slots are busy. Stop another draft or try again shortly.',
   REQUEST_TIMEOUT: 'The request timed out. You can try generating again.',
   STREAM_TIMEOUT: 'The stream timed out. You can try generating again.',
-  INVALID_STREAM: 'The scripted stream could not complete. Try generating again.',
+  INVALID_STREAM: 'The generation stream could not complete. Try generating again.',
+  LIVE_UNAVAILABLE: 'Live AI is unavailable. Configure the server API key or select Scripted demo.',
+  PROVIDER_RATE_LIMIT: 'Groq’s rate limit was reached. Wait before retrying, or select Scripted demo. No automatic retry was sent.',
+  PROVIDER_AUTH: 'Groq rejected access. Check the server API key and model permissions.',
+  PROVIDER_REQUEST_REJECTED: 'Groq rejected this request. Check the configured model and account access.',
+  PROVIDER_UNAVAILABLE: 'Groq is unavailable. Try later or select Scripted demo.',
+  PROVIDER_TIMEOUT: 'Groq timed out. Try later or select Scripted demo.',
+  PROVIDER_TRUNCATED: 'The model reached its output limit. This draft is incomplete; try a shorter question.',
+  BUDGET_EXHAUSTED: 'The local token budget is full. Wait for capacity or select Scripted demo.',
+  BUDGET_UNAVAILABLE: 'The local budget ledger is unavailable. Check the server before using Live AI.',
+  USAGE_INVALID: 'Provider usage could not be validated. This request cannot be marked complete.',
 };
 
 async function consume(response: Response, signal: AbortSignal, current: number) {
@@ -81,7 +103,7 @@ async function consume(response: Response, signal: AbortSignal, current: number)
     const data = JSON.parse(raw) as Record<string, unknown>;
     if (type === 'status') {
       if (data.step === 'lookup') { activity('Looking up customer', 'Authenticated MCP gateway'); message('Retrieving the selected customer through MCP…'); }
-      if (data.step === 'generating') { activity('Generating scripted draft', 'Email guardrail active'); message('Streaming a deterministic template. No live model is connected.'); }
+      if (data.step === 'generating') { activity(mode.value === 'live' ? 'Generating with Groq' : 'Generating scripted draft', 'Email guardrail active'); message(mode.value === 'live' ? 'Streaming a live AI reply from Groq…' : 'Streaming a deterministic template. No live model is connected.'); }
     } else if (type === 'customer') {
       element('verified-name').textContent = String(data.name);
       element('verified-plan').textContent = `${String(data.plan)} plan · ${String(data.customer_id)}`;
@@ -89,6 +111,12 @@ async function consume(response: Response, signal: AbortSignal, current: number)
     } else if (type === 'delta') {
       if (typeof data.text !== 'string' || draft.value.length + data.text.length > 100_000) throw new Error('INVALID_STREAM');
       draft.hidden = false; element('empty-state').hidden = true; draft.value += data.text; draft.scrollTop = draft.scrollHeight;
+    } else if (type === 'usage') {
+      element('model-tokens').textContent = data.status === 'known' ? `${String(data.inputTokens)} / ${String(data.outputTokens)}` : 'Unknown';
+      element('budget-available').textContent = Number(data.budgetAvailable).toLocaleString('en-US');
+      activity(data.status === 'known' ? 'Model usage recorded' : 'Model usage unavailable', data.status === 'known'
+        ? `${String(data.chargedTokens)} tokens charged to the local budget`
+        : `${String(data.reservedTokens)} tokens retained in the local budget; this is an allowance, not measured usage`);
     } else if (type === 'metrics') {
       element('redactions').textContent = String(data.redactions);
       element('output-bytes').textContent = Number(data.outputBytes).toLocaleString('en-US');
@@ -129,7 +157,7 @@ element<HTMLFormElement>('draft-form').addEventListener('submit', event => {
       await session(control.signal);
       const response = await fetch('/copilot/draft', { method: 'POST', credentials: 'same-origin', signal: control.signal,
         headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
-        body: JSON.stringify({ customerId: customer.value, caseType, issue: issue.value, includeSampleEmail: sampleEmail.checked }),
+        body: JSON.stringify({ mode: mode.value, customerId: customer.value, caseType, issue: issue.value, includeSampleEmail: sampleEmail.checked }),
       });
       if (!response.ok) {
         const body = await response.json() as { error?: { code?: string } };
@@ -140,7 +168,7 @@ element<HTMLFormElement>('draft-form').addEventListener('submit', event => {
       if (current !== run) return;
       if (control.signal.aborted) {
         element('draft-status').textContent = 'Stopped · incomplete';
-        message(draft.value ? 'Generation stopped. The partial draft is incomplete and can be edited.' : 'Generation stopped. No draft text was received.');
+        message((draft.value ? 'Generation stopped. The partial draft is incomplete and can be edited.' : 'Generation stopped. No draft text was received.') + (mode.value === 'live' ? ' Live usage may be unknown; its allowance is retained.' : ''));
         element('review-note').textContent = 'Partial draft. Check for missing information.';
         activity('Generation stopped', 'The active request was cancelled');
       } else {
@@ -159,9 +187,10 @@ element<HTMLFormElement>('draft-form').addEventListener('submit', event => {
 stop.addEventListener('click', () => controller?.abort());
 reset.addEventListener('click', () => {
   ++run; controller?.abort(); controller = undefined;
-  clearOutput(); customer.selectedIndex = 0; sampleEmail.checked = true; selectCase('account'); setBusy(false);
+  clearOutput(); mode.value = 'scripted'; updateMode(); customer.selectedIndex = 0; sampleEmail.checked = true; selectCase('account'); setBusy(false);
   message('Demo reset. Choose a customer and generate a new draft.'); issue.focus();
 });
+mode.addEventListener('change', () => { ++run; clearOutput(); updateMode(); setBusy(false); message('Mode selected. Generate a new draft.'); });
 issue.addEventListener('input', count);
 draft.addEventListener('input', () => { copy.disabled = busy || !draft.value.trim(); if (!busy) element('draft-status').textContent = 'Edited by you'; copy.textContent = 'Copy draft'; });
 copy.addEventListener('click', () => {
@@ -194,7 +223,8 @@ async function initialize() {
       label.append(title, description); wrapper.append(radio, label); element('case-list').append(wrapper);
       radio.addEventListener('change', () => { if (radio.checked) selectCase(item.id); });
     }
-    selectCase('account'); setBusy(false); reset.disabled = false;
+    mode.querySelector<HTMLOptionElement>('option[value="live"]')!.disabled = !catalog.live.available;
+    updateMode(); selectCase('account'); setBusy(false); reset.disabled = false;
     message('Choose a customer and case, then generate a draft.');
   } catch { message('Could not connect to the local demo. Start the server and reload this page.', 'error'); }
 }

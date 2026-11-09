@@ -1,5 +1,7 @@
 # Support Copilot Stage A
 
+> Historical Stage A record (November 8). [Stage B](COPILOT_STAGE_B.md) now adds optional Groq generation and budget accounting; the current launcher and workbench support both modes.
+
 Implemented November 8, 2026. Developer: **Yu-Chen Su**.
 
 Stage A adds a local English workbench that connects customer lookup to a scripted response draft. It uses the existing MCP gateway and streaming email guardrail. It does not connect a live model, consume model tokens, send messages, or issue refunds.

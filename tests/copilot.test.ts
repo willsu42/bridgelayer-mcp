@@ -13,6 +13,9 @@ import { scriptedDraft } from '../src/copilot/scripted.js';
 import type { DraftSource } from '../src/copilot/workflow.js';
 import { frame } from '../src/streaming/provider.js';
 import type { LogEvent } from '../src/logger.js';
+import { GroqProvider } from '../src/copilot/groq.js';
+import { TokenBudget } from '../src/resilience/budget.js';
+import type { LiveGeneration } from '../src/copilot/generation.js';
 
 const valid = { customerId: 'CUST-00001', caseType: 'account', issue: 'Please help me understand my current account plan.', includeSampleEmail: true };
 function deferred() { let resolve!: () => void; const promise = new Promise<void>(done => { resolve = done; }); return { resolve, promise }; }
@@ -22,13 +25,14 @@ function parse(body: string) {
     return { type: event!.slice(7), data: JSON.parse(data!.slice(6)) as Record<string, unknown> };
   });
 }
-async function stack(t: TestContext, source: DraftSource = (customer, input) => scriptedDraft(customer, input, 0)) {
+async function stack(t: TestContext, source: DraftSource = (customer, input) => scriptedDraft(customer, input, 0), live?: LiveGeneration) {
   const store = new CustomerStore(':memory:'); const audit = new GatewayAudit(':memory:');
   const jwtSecret = randomBytes(32).toString('hex'); const serviceKey = randomBytes(32).toString('hex');
   const logs: LogEvent[] = []; let starts = 0;
   const customer = await startCustomerHttp({ store, serviceKey });
   const gateway = await startGateway({ downstreamUrl: customer.url, jwtSecret, serviceKey, audit, logger: event => logs.push(event) });
   const copilot = await startCopilot({ gatewayUrl: gateway.url, jwtSecret, logger: event => logs.push(event),
+    ...(live ? { live } : {}),
     source: (record, input) => { starts++; assert.ok(!('email' in record)); return source(record, input); },
   });
   t.after(async () => { await copilot.close(); await gateway.close(); await customer.close(); audit.close(); store.close(); });
@@ -41,6 +45,81 @@ async function stack(t: TestContext, source: DraftSource = (customer, input) => 
   });
   return { copilot, gateway, customer, cookie, setCookie, origin, post, logs, starts: () => starts, jwtSecret, store };
 }
+
+test('live requests require configured Groq and cannot select an arbitrary provider or model', async t => {
+  const s = await stack(t);
+  const catalog = await (await fetch(new URL('/api/catalog', s.copilot.url), { headers: { cookie: s.cookie } })).json() as { live: { available: boolean } };
+  assert.equal(catalog.live.available, false);
+  const response = await s.post({ ...valid, mode: 'live' }); assert.equal(response.status, 503);
+  assert.match(await response.text(), /LIVE_UNAVAILABLE/);
+  for (const extra of [{ mode: 'unknown' }, { model: 'other' }, { apiKey: 'secret' }, { endpoint: 'https://other.example' }]) {
+    assert.equal((await s.post({ ...valid, ...extra })).status, 400);
+  }
+  assert.equal(s.starts(), 0);
+});
+
+test('live HTTP workflow uses verified MCP context, separates concurrent drafts, and preserves scripted mode', async t => {
+  const budget = new TokenBudget(':memory:'); t.after(() => budget.close()); let calls = 0;
+  const provider = new GroqProvider({ apiKey: 'server-only-test-key', fetch: async (_url, init) => {
+    calls++;
+    const body = JSON.parse(String(init!.body)); const context = JSON.parse(body.messages[1].content);
+    assert.deepEqual(Object.keys(context.verifiedCustomer).sort(), ['name', 'plan']);
+    const text = `Hello ${context.verifiedCustomer.name}, your plan is ${context.verifiedCustomer.plan}. Contact help@example.com. `;
+    return new Response(`data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: text }, finish_reason: null }] })}\n\n` +
+      `data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], x_groq: { usage: { prompt_tokens: 80, completion_tokens: 30, total_tokens: 110 } } })}\n\ndata: [DONE]\n\n`,
+    { headers: { 'content-type': 'text/event-stream' } });
+  } });
+  const s = await stack(t, undefined, { provider, budget });
+  const catalog = await (await fetch(new URL('/api/catalog', s.copilot.url), { headers: { cookie: s.cookie } })).text();
+  assert.match(catalog, /"available":true/); assert.match(catalog, /openai\/gpt-oss-20b/); assert.doesNotMatch(catalog, /server-only-test-key/);
+  const [sam, jordan] = await Promise.all(['CUST-00002', 'CUST-00003'].map(async customerId => {
+    const response = await s.post({ ...valid, customerId, mode: 'live' }); assert.equal(response.status, 200); return parse(await response.text());
+  }));
+  for (const [events, name, other] of [[sam!, 'Sam Chen', 'Jordan Taylor'], [jordan!, 'Jordan Taylor', 'Sam Chen']] as const) {
+    const text = events.filter(e => e.type === 'delta').map(e => e.data.text).join('');
+    assert.ok(text.includes(name)); assert.ok(!text.includes(other)); assert.doesNotMatch(text, /help@example.com/);
+    assert.equal(events.find(e => e.type === 'usage')!.data.chargedTokens, 110);
+    assert.equal(events.at(-1)!.type, 'done'); assert.equal(events.at(-1)!.data.mode, 'live');
+  }
+  assert.equal(budget.status('copilot-demo').used, 220); assert.equal(calls, 2); assert.equal(s.starts(), 0);
+  const scripted = parse(await (await s.post()).text());
+  assert.equal(scripted.at(-1)!.data.mode, 'scripted'); assert.equal(calls, 2); assert.equal(s.starts(), 1);
+  assert.ok(!scripted.some(e => e.type === 'usage'));
+  assert.doesNotMatch(JSON.stringify(s.logs), /server-only-test-key|example.com|Sam Chen|Jordan Taylor/);
+});
+
+test('live rate limits report failure and unknown usage without silent scripted fallback', async t => {
+  const budget = new TokenBudget(':memory:'); t.after(() => budget.close()); let calls = 0;
+  const provider = new GroqProvider({ apiKey: 'server-only-test-key', fetch: async () => { calls++; return new Response('private provider details', { status: 429 }); } });
+  const s = await stack(t, undefined, { provider, budget });
+  const body = await (await s.post({ ...valid, mode: 'live' })).text();
+  const events = parse(body);
+  assert.equal(events.find(e => e.type === 'usage')!.data.status, 'unknown');
+  assert.equal(events.at(-1)!.data.code, 'PROVIDER_RATE_LIMIT');
+  assert.doesNotMatch(body, /private provider details|event: done|event: delta/);
+  assert.equal(calls, 1); assert.equal(s.starts(), 0);
+});
+
+test('live HTTP disconnect and shutdown cancel provider I/O and settle reservations', { timeout: 10_000 }, async t => {
+  const budget = new TokenBudget(':memory:'); t.after(() => budget.close());
+  let started = deferred(); let stopped = deferred(); let calls = 0;
+  const provider = new GroqProvider({ apiKey: 'secret', fetch: async (_url, init) => {
+    calls++; started.resolve();
+    try { await delay(60_000, undefined, { signal: init!.signal! }); }
+    finally { assert.ok(init!.signal!.aborted); stopped.resolve(); }
+    throw new Error('unreachable');
+  } });
+  const s = await stack(t, undefined, { provider, budget });
+  const disconnected = await s.post({ ...valid, mode: 'live' }); await started.promise;
+  await disconnected.body!.cancel(); await stopped.promise;
+  for (let i = 0; i < 100 && !s.logs.some(e => e.event === 'copilot.request' && e.outcome === 'cancelled'); i++) await delay(5);
+  const afterDisconnect = budget.status('copilot-demo').used; assert.ok(afterDisconnect > 1024);
+  started = deferred(); stopped = deferred();
+  const shuttingDown = await s.post({ ...valid, mode: 'live' }); await started.promise;
+  const reading = shuttingDown.text().catch(() => 'closed');
+  await s.copilot.close(); await stopped.promise; await reading;
+  assert.equal(budget.status('copilot-demo').used, afterDisconnect * 2); assert.equal(calls, 2);
+});
 
 test('Copilot serves the local workbench and fixes the browser session to a demo viewer', async t => {
   const s = await stack(t);

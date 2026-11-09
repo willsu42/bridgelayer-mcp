@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const draftRequest = z.strictObject({
+  mode: z.enum(['scripted', 'live']).default('scripted'),
   customerId: z.string().regex(/^CUST-[0-9]{5}$/),
   caseType: z.enum(['account', 'billing', 'access']),
   issue: z.string().trim().min(10).max(1200).refine(value => !/[\uD800-\uDFFF]/u.test(value)),
@@ -16,6 +17,8 @@ export type DraftEvent =
   | { type: 'status'; data: { step: 'lookup' | 'generating' } }
   | { type: 'customer'; data: CustomerSummary }
   | { type: 'delta'; data: { text: string } }
+  | { type: 'usage'; data: { provider: 'groq'; model: string; status: 'known' | 'unknown'; inputTokens: number | null;
+    outputTokens: number | null; reservedTokens: number; chargedTokens: number; budgetAvailable: number } }
   | { type: 'metrics'; data: { redactions: number; suppressions: number; outputBytes: number } };
 
 export class CopilotError extends Error {

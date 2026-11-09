@@ -3,7 +3,7 @@ export const limits = Object.freeze({
   chunkBytes: 16_384, deltaBytes: 16_384, totalBytes: 1_048_576,
   emptyChunks: 64, streams: 4, bodyMs: 3000, readMs: 3000, totalMs: 30_000,
 });
-export type FailureCode = 'INVALID_STREAM' | 'STREAM_LIMIT' | 'STREAM_TIMEOUT' | 'CANCELLED' | 'BUDGET_EXHAUSTED' | 'BUDGET_UNAVAILABLE' | 'USAGE_INVALID' | 'PROVIDER_RATE_LIMIT' | 'PROVIDER_TIMEOUT';
+export type FailureCode = 'INVALID_STREAM' | 'STREAM_LIMIT' | 'STREAM_TIMEOUT' | 'CANCELLED' | 'BUDGET_EXHAUSTED' | 'BUDGET_UNAVAILABLE' | 'USAGE_INVALID' | 'PROVIDER_RATE_LIMIT' | 'PROVIDER_TIMEOUT' | 'PROVIDER_AUTH' | 'PROVIDER_UNAVAILABLE' | 'PROVIDER_REQUEST_REJECTED' | 'PROVIDER_TRUNCATED';
 export class StreamFailure extends Error {
   constructor(readonly code: FailureCode) { super(code); }
 }

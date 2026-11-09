@@ -8,7 +8,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "demo:copilot": "npm run build --silent && node dist/scripts/start-copilot.js",
+    "demo:copilot": "npm run build --silent && node --env-file-if-exists=.env dist/scripts/start-copilot.js",
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.web.json",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json --noEmit",
     "start:mcp": "node dist/src/mcp/stdio.js",

@@ -5,7 +5,7 @@ import { parseEvent, type Fixture, type Provider } from './provider.js';
 import { aborted, interruptible, limits, metrics, schedule, StreamFailure, type Metrics, type Schedule } from './contracts.js';
 
 export async function* guardStream(provider: Provider, fixture: Fixture, options: {
-  signal: AbortSignal; stats?: Metrics; schedule?: Schedule; onText?: () => void;
+  signal: AbortSignal; stats?: Metrics; schedule?: Schedule; onText?: () => void; readMs?: number;
 }): AsyncGenerator<string> {
   const stats = options.stats ?? metrics();
   const arm = options.schedule ?? schedule;
@@ -30,7 +30,7 @@ export async function* guardStream(provider: Provider, fixture: Fixture, options
     source = provider.open({ fixture, signal: control.signal })[Symbol.asyncIterator]();
     while (true) {
       control.signal.throwIfAborted();
-      const cancelRead = arm(() => control.abort(new StreamFailure('STREAM_TIMEOUT')), limits.readMs);
+      const cancelRead = arm(() => control.abort(new StreamFailure('STREAM_TIMEOUT')), options.readMs ?? limits.readMs);
       let item: IteratorResult<Uint8Array>;
       try { item = await interruptible(Promise.resolve(source.next()), control.signal); }
       finally { cancelRead(); }

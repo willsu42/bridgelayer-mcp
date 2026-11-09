@@ -10,6 +10,7 @@ import { writeFrame } from '../streaming/http.js';
 import { frame } from '../streaming/provider.js';
 import { catalog, CopilotError, draftRequest } from './contracts.js';
 import { draftWorkflow, type DraftSource } from './workflow.js';
+import type { LiveGeneration } from './generation.js';
 
 const cookieName = 'bridgelayer_demo';
 const assets = new Map([
@@ -46,7 +47,7 @@ function readBody(req: IncomingMessage, signal: AbortSignal): Promise<unknown> {
 }
 
 export async function startCopilot(options: {
-  gatewayUrl: string; jwtSecret: string; port?: number; source?: DraftSource; logger?: (event: LogEvent) => void;
+  gatewayUrl: string; jwtSecret: string; port?: number; source?: DraftSource; live?: LiveGeneration; logger?: (event: LogEvent) => void;
 }) {
   const target = new URL(options.gatewayUrl);
   if (target.protocol !== 'http:' || target.hostname !== '127.0.0.1' || target.pathname !== '/mcp' ||
@@ -103,7 +104,10 @@ export async function startCopilot(options: {
         const identity = await verifyToken(`Bearer ${token}`, options.jwtSecret);
         if (identity.sub !== 'copilot-demo' || identity.tenant_id !== 'copilot-demo' || identity.role !== 'viewer') throw new Error();
       } catch { throw new CopilotError('SESSION_REQUIRED', 401); }
-      if (route === '/api/catalog') { json(res, 200, catalog); outcome = 'success'; return; }
+      if (route === '/api/catalog') {
+        json(res, 200, { ...catalog, live: { available: !!options.live, provider: 'groq', model: options.live?.provider.model ?? null } });
+        outcome = 'success'; return;
+      }
       const accepts = (header(req, 'accept') ?? '').split(',').some(part => {
         const [type, ...params] = part.trim().toLowerCase().split(';');
         const q = params.map(p => p.trim()).find(p => p.startsWith('q='));
@@ -114,13 +118,15 @@ export async function startCopilot(options: {
       active++; admitted = true;
       const parsed = draftRequest.safeParse(await readBody(req, control.signal));
       if (!parsed.success) throw new CopilotError('INVALID_REQUEST', 400);
+      if (parsed.data.mode === 'live' && !options.live) throw new CopilotError('LIVE_UNAVAILABLE', 503);
       control.signal.throwIfAborted();
       res.setTimeout(0);
       res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store' });
       for await (const event of draftWorkflow(parsed.data, { gatewayUrl: options.gatewayUrl, token, signal: control.signal,
         ...(options.source ? { source: options.source } : {}),
+        ...(options.live ? { live: options.live } : {}),
       })) await writeFrame(res, frame(event.type, event.data), control.signal);
-      await writeFrame(res, frame('done', { mode: 'scripted' }), control.signal);
+      await writeFrame(res, frame('done', { mode: parsed.data.mode }), control.signal);
       res.end(); outcome = 'success';
     } catch (error) {
       const failure = control.signal.aborted ? control.signal.reason : error;

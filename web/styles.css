@@ -101,9 +101,10 @@ a {
   color:#d7e7e5;
 }
 
-.mode>span {
+.mode>span[aria-hidden="true"] {
   width:6px;
   height:6px;
+  flex-shrink:0;
   background:#80ceb0;
   border-radius:50%;
 }
@@ -635,7 +636,7 @@ h3 {
   font-size:11px;
 }
 
-.mode.small>span {
+.mode.small>span[aria-hidden="true"] {
   background:var(--teal);
 }
 

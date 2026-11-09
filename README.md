@@ -1,8 +1,8 @@
 # BridgeLayer
 
-BridgeLayer is a local prototype for controlled customer-support tool access and guarded streaming responses. Its Support Copilot workbench looks up fictional customers through MCP and streams editable, email-redacted drafts from deterministic templates. The original scripted clients also demonstrate simulated refunds, tool permissions, and a separate streaming route with tenant token budgets and one pre-output backup attempt.
+BridgeLayer is a local prototype for controlled customer-support tool access and guarded streaming responses. Its Support Copilot workbench looks up fictional customers through MCP and streams editable, email-redacted drafts from deterministic templates or a configured Groq model. The original scripted clients also demonstrate simulated refunds, tool permissions, and a separate streaming route with tenant token budgets and one pre-output backup attempt.
 
-**Tasks 1–4 are complete within the agreed prototype scope as of November 3, 2026.** The additional [Support Copilot Stage A](docs/COPILOT_STAGE_A.md), implemented November 8, adds a local English workbench. There is no live LLM or real payment integration. The [original project closeout](docs/PROJECT_CLOSEOUT.md) retains the four-task scope and evidence.
+**Tasks 1–4 are complete within the agreed prototype scope as of November 3, 2026.** The additional [Support Copilot Stage A](docs/COPILOT_STAGE_A.md), implemented November 8, adds a local English workbench. [Stage B](docs/COPILOT_STAGE_B.md), implemented November 9, adds optional Groq live generation and token accounting. Real provider validation requires a local API key; no real payment integration is implemented. The [original project closeout](docs/PROJECT_CLOSEOUT.md) retains the four-task scope and evidence.
 
 Developed by **Yu-Chen Su (Will), Independent Software & AI Consultant**. The personal/FDE prototype was previously named SupportBridge and predates the active professional development phase beginning **September 11, 2026**. This is a customer-inspired integration case study, with no evidenced actual client engagement.
 
@@ -10,7 +10,7 @@ The English [product brief and business presentation](docs/business/README.md) i
 
 ## Problem being solved
 
-Customer-support integrations need a clear boundary between incoming requests, authenticated callers, permitted operations, business rules, and stored results. BridgeLayer demonstrates those boundaries with discoverable MCP tools and reproducible success/failure cases. The local workbench now connects lookup and scripted drafting in a browser. No LLM agent is implemented.
+Customer-support integrations need a clear boundary between incoming requests, authenticated callers, permitted operations, business rules, and stored results. BridgeLayer demonstrates those boundaries with discoverable MCP tools and reproducible success/failure cases. The local workbench connects lookup and scripted or live AI drafting in a browser. Tool selection remains deterministic; the model only writes a draft.
 
 ## Open the Support Copilot demo
 
@@ -20,7 +20,15 @@ With Node 24 and dependencies installed:
 npm run demo:copilot
 ```
 
-Open **http://127.0.0.1:3040/**. Select a fictional customer and case, generate a draft, then edit or copy it. Stop generation or reset the demo at any time. The workbench shows actual lookup events and email-redaction metrics. It uses fresh in-memory demo data and requires no API key. Press Ctrl+C to stop. See the [Stage A walkthrough](docs/COPILOT_STAGE_A.md) for its architecture, demo script, limits, and validation.
+Open **http://127.0.0.1:3040/**. Select a fictional customer and case, generate a draft, then edit or copy it. Stop generation or reset the demo at any time. The workbench shows actual lookup events and email-redaction metrics. Scripted mode uses fresh in-memory demo data and requires no API key. Press Ctrl+C to stop. See the [Stage A walkthrough](docs/COPILOT_STAGE_A.md) for its architecture, demo script, limits, and validation.
+
+## Enable Groq Live AI (Stage B)
+
+Use a Groq account on the **Free plan**. Copy `.env.example` to `.env` if you do not already have one, then enter `GROQ_API_KEY` locally. The default model is `openai/gpt-oss-20b`. Restart `npm run demo:copilot` and choose **Live AI · Groq** in the workbench. The key stays on the server; never paste it into the browser or commit `.env`.
+
+The app cannot verify your Groq billing plan or guarantee account quota. Keep the account on Free; a paid account can incur charges. There are no automatic retries, model failovers, or automatic plan upgrades. The local budget allows 8,000 tokens per sixty-second settlement window, independently of Groq limits. Usage persists in ignored `data/copilot-budget.sqlite`.
+
+Live mode sends the question and verified customer name/plan to Groq. Customer-record email is excluded, but emails typed in the question are **not masked before sending**. Use fictional inputs. See the [Stage B setup, behavior, and validation](docs/COPILOT_STAGE_B.md).
 
 ## Current capabilities
 
@@ -31,19 +39,20 @@ Open **http://127.0.0.1:3040/**. Select a fictional customer and case, generate 
 | Support Copilot Stage A | English browser workbench, actual MCP lookup, guarded scripted drafting, editing/copying, cancellation, reset, and request activity. Local Node 24 checks pass with 74 tests/subtests. |
 | Task 1: customer MCP service | Original stdio server with strict validation, lookup, simulated refunds, SQLite, and rollback tests. |
 | Task 2: HTTP MCP security gateway | Stateless HTTP MCP with signed demo JWTs, role policy, request correlation, and separate downstream credentials. |
+| Support Copilot Stage B | Optional Groq live drafts, explicit mode selection, provider usage, persistent local token budget, cancellation, and sanitized failures. |
 | Task 3: streaming email guardrail | Authenticated `/guardrails/stream` with deterministic mock bytes, bounded incremental redaction, cancellation, and a local demo; local verification and remote Node 22/24 CI are complete. |
 | Task 4: token budgets and fallback | SQLite tenant reservations, usage reconciliation, and one pre-output backup attempt over deterministic model mocks; local checks and remote Node 22/24 CI are verified. |
 | `get_customer_record` | Takes `customer_id`; returns a fictional record or business error. |
 | `trigger_refund` | Takes `customer_id`, `amount`, `reason`; atomically stores a simulated refund and its success audit. |
 | `admin_health_check` | HTTP-only harmless admin test tool; returns fixed health information without data changes. |
 | Denial audit / diagnostics | Separate SQLite denial records; correlated gateway outcomes and durations; no bearer tokens or tool arguments in diagnostic fields. |
-| Verification / demos | 66 tests/subtests, official SDK clients, fault injection, and four demos covering MCP, streaming, and resilience. |
+| Verification / demos | 111 tests/subtests pass locally on Node 24, including Groq adapter and HTTP integration with simulated provider responses. A real Groq call remains unverified without an API key. |
 
 Customer IDs require five ASCII digits after `CUST-`; extra arguments are rejected. Amounts must be finite positive numbers, with no string coercion; the store additionally requires safely representable whole cents. Reasons are trimmed before the ten-character minimum check. Receipts return integer `amount_cents`, USD currency, and simulated status.
 
 ### Optional extensions
 
-All four original tasks are closed, and the local Stage A workbench is implemented. Live LLM/provider integration, external customer APIs, and hosted deployment remain future work. Stage A does not integrate token budgets or provider fallback into drafting; those remain in the separate Task 4 demonstration.
+All four original tasks are closed. Stages A and B add the local workbench, optional Groq generation, and live token accounting. External customer APIs, hosted deployment, and live provider fallback remain future work. Task 4’s mock fallback demonstration remains independently available.
 
 ## Architecture
 
@@ -69,7 +78,7 @@ Both HTTP listeners bind loopback. The local launcher runs them in one Node proc
 
 The gateway authenticates every request, leaves authenticated discovery unfiltered, and denies non-admin `admin_` calls before forwarding. Downstream headers are explicitly constructed; the client's bearer token is never passed through.
 
-**No LLM chooses tools:** MCP demo clients call them explicitly. The original streaming routes use predefined provider fixtures and do not invoke customer tools. The additional workbench workflow explicitly looks up one customer before generating its scripted draft. See [Stage A architecture](docs/COPILOT_STAGE_A.md#request-flow) for that path and [the original architecture](docs/ARCHITECTURE.md) for the earlier routes.
+**No LLM chooses tools:** MCP demo clients call them explicitly. The original streaming routes use predefined provider fixtures and do not invoke customer tools. The additional workbench workflow explicitly looks up one customer before generating its scripted or Groq draft. See [Stage A architecture](docs/COPILOT_STAGE_A.md#request-flow) for that path and [the original architecture](docs/ARCHITECTURE.md) for the earlier routes.
 
 ## Example workflow
 
@@ -95,7 +104,7 @@ npm run demo:streaming
 npm run bench:streaming
 ```
 
-It accepts predefined synthetic fixtures rather than arbitrary prompts. Email-containing whitespace tokens are replaced as a whole; punctuation may also be removed. Existing customer MCP responses are not passed through this filter. No live LLM or general-purpose PII detection is implemented.
+It accepts predefined synthetic fixtures rather than arbitrary prompts. Email-containing whitespace tokens are replaced as a whole; punctuation may also be removed. Existing customer MCP responses are not passed through this filter. This fixture route has no live LLM; general-purpose PII detection is not implemented. Groq generation is available separately in the Copilot workbench.
 
 To exercise token accounting and primary/backup behavior:
 
