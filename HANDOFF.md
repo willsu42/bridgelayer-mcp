@@ -4,6 +4,8 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Context for the next session
 
+**November 13 update:** [Stage C](docs/COPILOT_STAGE_C.md) implements three local failure simulations, evidence display, and manual Scripted recovery. Each uses an isolated temporary ledger and never calls Groq. All 114 tests/subtests pass locally. The user configured their ignored `.env`; a minimal real Groq request previously returned HTTP 200, `OK`, and usage of 76 input / 18 output tokens. This verifies key/model/stream access, not full answer quality or the account billing tier. Leave the local demo running as requested.
+
 **November 9 update:** [Support Copilot Stage B](docs/COPILOT_STAGE_B.md) adds optional Groq live generation, explicit Scripted/Live modes, normalized SSE, persistent token reservations/settlement, and cancellation. `npm run demo:copilot` loads an optional ignored `.env`; set `GROQ_API_KEY` locally using a Free-plan account. Local Node 24 validation passes 111 tests/subtests. No key is configured in the implementation environment, so actual Groq connectivity, account access, and model quality remain unverified.
 
 **November 8 update:** Support Copilot Stage A is implemented as additional scope. Run `npm run demo:copilot` and open http://127.0.0.1:3040/. Read [COPILOT_STAGE_A.md](docs/COPILOT_STAGE_A.md) for the English workbench, real gateway lookup, guarded scripted drafts, demo session, cancellation, and reset. Local Node 24 validation passes 74 tests/subtests. No live model or token-budget/fallback integration into the new draft workflow is claimed.
@@ -24,7 +26,7 @@ BridgeLayer is Yu-Chen Su's (Will's) independent software and AI development pro
 
 ## Next work
 
-The original four tasks remain closed. The [project closeout](docs/PROJECT_CLOSEOUT.md) and [TASK4_CLOSEOUT.md](docs/TASK4_CLOSEOUT.md) retain historical evidence. Stage A now adds the local browser workflow and has its own [validation record](docs/COPILOT_STAGE_A.md#validation). Stage B implements the Groq path with simulated-provider verification; next validate a real call and answer quality using a Free-plan account key. Stage C would add controlled resilience demonstrations and any agreed sharing/deployment work. No commit, push, deployment, or remote CI run is part of Stage A's local verification.
+The original four tasks remain closed. The [project closeout](docs/PROJECT_CLOSEOUT.md) and [TASK4_CLOSEOUT.md](docs/TASK4_CLOSEOUT.md) retain historical evidence. Stage A now adds the local browser workflow and has its own [validation record](docs/COPILOT_STAGE_A.md#validation). Stage B implements the Groq path with simulated-provider verification; a minimal real call now works. Full account/billing/access answer-quality acceptance is still next. Stage C adds local failure demonstrations; sharing and deployment remain separate, unrequested work. No commit, push, deployment, or remote CI run is part of Stage A's local verification.
 
 Explain why an unknown primary attempt keeps its reservation, why backup requires new admission, why active leases outlive historical usage, and why no fallback can follow emitted output. Additional live providers and extra PII formats remain future scope. The local UI supports Scripted and optional Groq generation. Tenant budget isolation does not isolate customer data.
 

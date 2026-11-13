@@ -857,3 +857,15 @@ h3 {
     transition:none!important;
   }
 }
+
+
+.simulation-result {
+  border:1px solid var(--border);
+  border-left:4px solid var(--teal);
+  border-radius:7px;
+  padding:18px;
+  margin:16px 0;
+  background:var(--teal-pale);
+}
+.simulation-result h3 { margin:0 0 10px; font-size:14px; }
+.simulation-result p { font-size:13px; line-height:1.7; }

@@ -20,8 +20,17 @@
     <div class="workspace">
       <aside class="context panel" aria-labelledby="context-title">
         <div class="section-heading"><span class="step-number">01</span><h2 id="context-title">Set the context</h2></div>
-        <label for="generation-mode">Generation mode</label><select id="generation-mode" disabled><option value="scripted">Scripted demo</option><option value="live" disabled>Live AI · Groq</option></select>
+        <label for="generation-mode">Generation mode</label><select id="generation-mode" disabled><option value="scripted">Scripted demo</option><option value="live" disabled>Live AI · Groq</option><option value="simulation">Failure simulation</option></select>
         <p id="mode-note" class="field-note">Checking live AI availability…</p>
+        <div id="simulation-controls" hidden>
+          <label for="simulation-scenario">Simulated failure</label>
+          <select id="simulation-scenario" aria-describedby="simulation-note">
+            <option value="rate-limit">Provider rate limit (429)</option>
+            <option value="timeout">Provider timeout</option>
+            <option value="budget-exhausted">Insufficient token budget</option>
+          </select>
+          <p id="simulation-note" class="field-note">Local fixtures only. No Groq request or real token charge.</p>
+        </div>
         <label for="customer">Customer</label><select id="customer" disabled><option>Loading customers…</option></select>
         <p class="field-note">Fictional demo profiles. Details are verified through MCP when you generate.</p>
         <fieldset id="cases" disabled><legend>Choose a support case</legend><div id="case-list" class="case-list"></div></fieldset>
@@ -37,6 +46,10 @@
         </form>
         <div class="draft-heading"><h3>Response draft</h3><span id="draft-status" class="state-tag">Ready when you are</span></div>
         <div id="notice" class="notice" role="status" aria-live="polite">Connecting to the local demo…</div>
+        <div id="simulation-result" class="simulation-result" hidden aria-live="polite">
+          <h3>Simulation evidence</h3><p id="simulation-evidence">Run a scenario to observe how the request is handled.</p>
+          <button id="recover" class="button secondary" type="button" hidden>Switch to Scripted recovery</button>
+        </div>
         <div id="empty-state" class="empty-state"><span class="document-symbol" aria-hidden="true">≡</span><h3>A clear starting point</h3><p>Your draft will appear here as it streams.<br>You can edit it before copying.</p><span class="empty-caption">CUSTOMER LOOKUP + EMAIL GUARDRAIL</span></div>
         <label class="sr-only" for="draft">Editable response draft</label><textarea id="draft" rows="14" hidden spellcheck="true"></textarea>
         <div class="draft-footer"><p id="review-note">Review every draft before sharing.</p><button id="copy" class="button secondary" type="button" disabled>Copy draft</button></div>
@@ -46,7 +59,7 @@
         <p class="field-note">Events from this request, as they happen.</p>
         <ol id="events" class="timeline" aria-label="Request activity"><li class="waiting">Waiting for your first draft</li></ol>
         <div class="verified"><p class="eyebrow">VERIFIED CUSTOMER</p><p id="verified-name">No lookup yet</p><p id="verified-plan" class="field-note">Generate a draft to retrieve the profile.</p></div>
-        <dl class="metrics"><div><dt>Email tokens redacted</dt><dd id="redactions">—</dd></div><div><dt>Output bytes</dt><dd id="output-bytes">—</dd></div><div><dt>Model tokens (input / output)</dt><dd id="model-tokens">—</dd></div><div><dt>Local budget remaining</dt><dd id="budget-available">—</dd></div><div><dt>Elapsed time</dt><dd id="elapsed">—</dd></div></dl>
+        <dl class="metrics"><div><dt>Email tokens redacted</dt><dd id="redactions">—</dd></div><div><dt>Output bytes</dt><dd id="output-bytes">—</dd></div><div><dt>Model tokens (input / output)</dt><dd id="model-tokens">—</dd></div><div><dt id="budget-label">Local budget remaining</dt><dd id="budget-available">—</dd></div><div><dt>Elapsed time</dt><dd id="elapsed">—</dd></div></dl>
         <div class="provider-note"><span class="mode small"><span aria-hidden="true"></span><span id="provider-label">Scripted provider</span></span><p id="provider-note">Deterministic templates. No model tokens or API charges.</p></div>
       </aside>
     </div>

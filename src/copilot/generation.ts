@@ -6,6 +6,7 @@ import type { CustomerSummary, DraftEvent, DraftRequest } from './contracts.js';
 
 export type Message = { role: 'system' | 'user'; content: string };
 export interface GenerationProvider {
+  readonly kind?: 'groq' | 'simulated';
   readonly model: string;
   open(input: { messages: Message[]; signal: AbortSignal; maxOutputTokens: number }): Attempt;
 }
@@ -32,7 +33,7 @@ export function inputAllowance(messages: Message[]): number {
 }
 
 export async function* liveDraft(customer: CustomerSummary, request: DraftRequest, options: LiveGeneration & {
-  signal: AbortSignal; stats: Metrics;
+  signal: AbortSignal; stats: Metrics; readMs?: number;
 }): AsyncGenerator<DraftEvent> {
   options.signal.throwIfAborted();
   const messages = buildMessages(customer, request);
@@ -49,7 +50,7 @@ export async function* liveDraft(customer: CustomerSummary, request: DraftReques
     for await (const text of guardStream({ open({ signal }) {
       attempt = options.provider.open({ messages, signal, maxOutputTokens: livePolicy.maxOutputTokens });
       return attempt.bytes;
-    } }, 'plain', { signal: options.signal, stats: options.stats, readMs: livePolicy.readMs })) {
+    } }, 'plain', { signal: options.signal, stats: options.stats, readMs: options.readMs ?? livePolicy.readMs })) {
       yield { type: 'delta', data: { text } };
     }
   } catch (error) { failed = true; failure = error; }
@@ -60,7 +61,7 @@ export async function* liveDraft(customer: CustomerSummary, request: DraftReques
   }
   if (usage && (usage.input > input || usage.output > livePolicy.maxOutputTokens)) throw new StreamFailure('USAGE_INVALID');
   options.signal.throwIfAborted();
-  yield { type: 'usage', data: { provider: 'groq', model: options.provider.model, status: usage ? 'known' : 'unknown',
+  yield { type: 'usage', data: { provider: options.provider.kind ?? 'groq', model: options.provider.model, status: usage ? 'known' : 'unknown',
     inputTokens: usage?.input ?? null, outputTokens: usage?.output ?? null, reservedTokens: reserved,
     chargedTokens: usage ? usage.input + usage.output : reserved, budgetAvailable: options.budget.status(tenant).available } };
   if (failed) throw failure;

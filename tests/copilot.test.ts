@@ -46,6 +46,76 @@ async function stack(t: TestContext, source: DraftSource = (customer, input) => 
   return { copilot, gateway, customer, cookie, setCookie, origin, post, logs, starts: () => starts, jwtSecret, store };
 }
 
+test('simulation exercises failures with isolated ledgers and never opens the configured live provider', async t => {
+  const budget = new TokenBudget(':memory:'); t.after(() => budget.close());
+  const reservation = budget.reserve('copilot-demo', 100, 'primary'); budget.settle(reservation, { input: 10, output: 2 });
+  let calls = 0;
+  const provider = new GroqProvider({ apiKey: 'must-never-leave-process', fetch: async () => { calls++; throw new Error('Unexpected external call'); } });
+  const s = await stack(t, undefined, { provider, budget });
+  const scenarios = ['rate-limit', 'timeout', 'budget-exhausted'] as const;
+  const expected = ['PROVIDER_RATE_LIMIT', 'STREAM_TIMEOUT', 'BUDGET_EXHAUSTED'];
+  const results = await Promise.all(scenarios.map(async scenario => parse(await (await s.post({ ...valid, mode: 'simulation', scenario })).text())));
+  for (const [index, events] of results.entries()) {
+    assert.equal(events.at(-1)!.type, 'error'); assert.equal(events.at(-1)!.data.code, expected[index]);
+    assert.ok(events.some(e => e.type === 'customer' && e.data.name === 'Alex Rivera'));
+    assert.ok(!events.some(e => ['delta', 'done'].includes(e.type)));
+    const observations = events.filter(e => e.type === 'simulation');
+    assert.equal(observations.length, 2);
+    assert.equal(observations[0]!.data.phase, 'started'); assert.equal(observations[0]!.data.budgetUsed, 0);
+    const final = observations[1]!.data;
+    assert.equal(final.phase, 'finished'); assert.equal(final.scenario, scenarios[index]);
+    assert.equal(final.providerCalls, index === 2 ? 0 : 1);
+    const usage = events.find(e => e.type === 'usage');
+    if (index === 2) { assert.equal(final.budgetUsed, 0); assert.equal(final.budgetAvailable, 1); assert.equal(usage, undefined); }
+    else {
+      assert.equal(usage!.data.provider, 'simulated'); assert.equal(usage!.data.status, 'unknown');
+      assert.equal(usage!.data.inputTokens, null); assert.equal(usage!.data.outputTokens, null);
+      assert.equal(final.budgetUsed, usage!.data.reservedTokens); assert.ok(Number(final.budgetUsed) > 1024);
+      assert.equal(Number(final.budgetUsed) + Number(final.budgetAvailable), 8000);
+    }
+    if (index === 1) assert.equal(final.cancelled, true);
+  }
+  assert.equal(calls, 0); assert.equal(s.starts(), 0); assert.equal(budget.status('copilot-demo').used, 12);
+  const repeated = parse(await (await s.post({ ...valid, mode: 'simulation', scenario: 'rate-limit' })).text());
+  assert.deepEqual(repeated.filter(e => e.type === 'simulation'), results[0]!.filter(e => e.type === 'simulation'));
+  const recovered = parse(await (await s.post()).text()); assert.equal(recovered.at(-1)!.type, 'done');
+  assert.equal(recovered.at(-1)!.data.mode, 'scripted'); assert.equal(s.starts(), 1); assert.equal(calls, 0);
+  assert.equal(budget.status('copilot-demo').used, 12);
+});
+
+test('simulation needs no key but retains authentication, lookup and strict mode/scenario validation', async t => {
+  const s = await stack(t);
+  const simulation = { ...valid, mode: 'simulation', scenario: 'budget-exhausted' };
+  assert.equal((await s.post(simulation, { cookie: '' })).status, 401);
+  assert.equal((await s.post(simulation, { origin: 'https://evil.example' })).status, 403);
+  for (const body of [
+    { ...valid, mode: 'simulation' }, { ...simulation, scenario: 'normal' }, { ...simulation, scenario: 'live' },
+    { ...simulation, mode: 'live' }, { ...simulation, mode: 'scripted' },
+    { ...simulation, budget: 9000 }, { ...simulation, readMs: 0 }, { ...simulation, endpoint: 'https://evil.example' },
+  ]) assert.equal((await s.post(body)).status, 400);
+  const missing = parse(await (await s.post({ ...simulation, customerId: 'CUST-99999' })).text());
+  assert.equal(missing.at(-1)!.data.code, 'CUSTOMER_NOT_FOUND'); assert.ok(!missing.some(e => e.type === 'simulation'));
+  const events = parse(await (await s.post(simulation)).text()); assert.equal(events.at(-1)!.data.code, 'BUDGET_EXHAUSTED');
+  assert.equal(s.starts(), 0);
+});
+
+test('stopping a simulation releases its slot and shutdown cancels remaining simulations', { timeout: 10_000 }, async t => {
+  const s = await stack(t);
+  const simulation = { ...valid, mode: 'simulation', scenario: 'timeout' };
+  const response = await s.post(simulation); const reader = response.body!.getReader(); let received = '';
+  while (!received.includes('event: simulation')) {
+    const chunk = await reader.read(); assert.equal(chunk.done, false); received += new TextDecoder().decode(chunk.value);
+  }
+  await reader.cancel(); reader.releaseLock();
+  for (let i = 0; i < 100 && !s.logs.some(e => e.event === 'copilot.request' && e.outcome === 'cancelled'); i++) await delay(5);
+  assert.ok(s.logs.some(e => e.event === 'copilot.request' && e.outcome === 'cancelled'));
+  const recovery = parse(await (await s.post({ ...simulation, scenario: 'budget-exhausted' })).text());
+  assert.equal(recovery.find(e => e.type === 'simulation')!.data.budgetUsed, 0);
+  const pending = await s.post(simulation); const reading = pending.text().catch(() => 'disconnected');
+  await s.copilot.close(); const final = await reading;
+  assert.doesNotMatch(final, /event: done/); assert.equal(s.starts(), 0);
+});
+
 test('live requests require configured Groq and cannot select an arbitrary provider or model', async t => {
   const s = await stack(t);
   const catalog = await (await fetch(new URL('/api/catalog', s.copilot.url), { headers: { cookie: s.cookie } })).json() as { live: { available: boolean } };

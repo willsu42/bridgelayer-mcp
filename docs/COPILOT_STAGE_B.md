@@ -2,6 +2,8 @@
 
 Developed by **Yu-Chen Su**. Implemented November 9, 2026.
 
+> November 13 update: a minimal real Groq request verified the configured key, model access, streamed completion, and usage reporting (76 input / 18 output tokens). The user also reported that the Live demo works. Full customer-support answer-quality acceptance remains outstanding; the implementation-time evidence below is historical. [Stage C](COPILOT_STAGE_C.md) now adds local failure demonstrations.
+
 Stage B adds optional cloud AI generation to the existing local English workbench. The application retrieves a fictional customer through the authenticated MCP gateway, asks Groq to draft a relevant English support reply, filters supported output email formats, and streams an editable draft. The model cannot choose tools, send messages, issue refunds, or change customer records.
 
 Implementation and simulated-provider verification are complete. **Real Groq connectivity, account/model access, and answer quality remain unverified because no API key is configured in the implementation environment.** Historical Tasks 1–4 and Stage A records retain their original scope.

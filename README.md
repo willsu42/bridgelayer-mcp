@@ -30,6 +30,12 @@ The app cannot verify your Groq billing plan or guarantee account quota. Keep th
 
 Live mode sends the question and verified customer name/plan to Groq. Customer-record email is excluded, but emails typed in the question are **not masked before sending**. Use fictional inputs. See the [Stage B setup, behavior, and validation](docs/COPILOT_STAGE_B.md).
 
+## Demonstrate failure handling (Stage C)
+
+Choose **Failure simulation** in the workbench, then select **Provider rate limit (429)**, **Provider timeout**, or **Insufficient token budget** and click **Run simulation**. The timeline shows the expected failure and an evidence panel reports local simulated attempts, held allowances, and cancellation. **Switch to Scripted recovery** returns to a working draft flow when you generate again.
+
+These scenarios need no Groq key and make no Groq requests. Each uses a fresh in-memory ledger; the live budget is untouched. They exercise the existing admission, cancellation, and settlement logic. They do not demonstrate live provider fallback or a real Groq outage. See the [Stage C walkthrough and three-minute demo script](docs/COPILOT_STAGE_C.md).
+
 ## Current capabilities
 
 ### Available Now
@@ -39,6 +45,7 @@ Live mode sends the question and verified customer name/plan to Groq. Customer-r
 | Support Copilot Stage A | English browser workbench, actual MCP lookup, guarded scripted drafting, editing/copying, cancellation, reset, and request activity. Local Node 24 checks pass with 74 tests/subtests. |
 | Task 1: customer MCP service | Original stdio server with strict validation, lookup, simulated refunds, SQLite, and rollback tests. |
 | Task 2: HTTP MCP security gateway | Stateless HTTP MCP with signed demo JWTs, role policy, request correlation, and separate downstream credentials. |
+| Support Copilot Stage C | Explicit local failure simulations for 429, timeout, and insufficient budget; observed evidence and manual Scripted recovery. |
 | Support Copilot Stage B | Optional Groq live drafts, explicit mode selection, provider usage, persistent local token budget, cancellation, and sanitized failures. |
 | Task 3: streaming email guardrail | Authenticated `/guardrails/stream` with deterministic mock bytes, bounded incremental redaction, cancellation, and a local demo; local verification and remote Node 22/24 CI are complete. |
 | Task 4: token budgets and fallback | SQLite tenant reservations, usage reconciliation, and one pre-output backup attempt over deterministic model mocks; local checks and remote Node 22/24 CI are verified. |
@@ -46,7 +53,7 @@ Live mode sends the question and verified customer name/plan to Groq. Customer-r
 | `trigger_refund` | Takes `customer_id`, `amount`, `reason`; atomically stores a simulated refund and its success audit. |
 | `admin_health_check` | HTTP-only harmless admin test tool; returns fixed health information without data changes. |
 | Denial audit / diagnostics | Separate SQLite denial records; correlated gateway outcomes and durations; no bearer tokens or tool arguments in diagnostic fields. |
-| Verification / demos | 111 tests/subtests pass locally on Node 24, including Groq adapter and HTTP integration with simulated provider responses. A real Groq call remains unverified without an API key. |
+| Verification / demos | 114 tests/subtests pass locally on Node 24, including isolated failure simulations. A minimal real Groq key/stream/usage check passed November 13; full customer-support answer-quality acceptance remains outstanding. |
 
 Customer IDs require five ASCII digits after `CUST-`; extra arguments are rejected. Amounts must be finite positive numbers, with no string coercion; the store additionally requires safely representable whole cents. Reasons are trimmed before the ten-character minimum check. Receipts return integer `amount_cents`, USD currency, and simulated status.
 

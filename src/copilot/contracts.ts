@@ -1,12 +1,15 @@
 import { z } from 'zod';
 
+export const simulationScenarios = ['rate-limit', 'timeout', 'budget-exhausted'] as const;
+export type SimulationScenario = typeof simulationScenarios[number];
 export const draftRequest = z.strictObject({
-  mode: z.enum(['scripted', 'live']).default('scripted'),
+  mode: z.enum(['scripted', 'live', 'simulation']).default('scripted'),
+  scenario: z.enum(simulationScenarios).optional(),
   customerId: z.string().regex(/^CUST-[0-9]{5}$/),
   caseType: z.enum(['account', 'billing', 'access']),
   issue: z.string().trim().min(10).max(1200).refine(value => !/[\uD800-\uDFFF]/u.test(value)),
   includeSampleEmail: z.boolean().default(true),
-});
+}).refine(value => (value.mode === 'simulation') === (value.scenario !== undefined));
 export type DraftRequest = z.infer<typeof draftRequest>;
 export const customerRecord = z.strictObject({
   customer_id: z.string().regex(/^CUST-[0-9]{5}$/),
@@ -17,7 +20,9 @@ export type DraftEvent =
   | { type: 'status'; data: { step: 'lookup' | 'generating' } }
   | { type: 'customer'; data: CustomerSummary }
   | { type: 'delta'; data: { text: string } }
-  | { type: 'usage'; data: { provider: 'groq'; model: string; status: 'known' | 'unknown'; inputTokens: number | null;
+  | { type: 'simulation'; data: { phase: 'started' | 'finished'; scenario: SimulationScenario; providerCalls: number;
+    budgetUsed: number; budgetAvailable: number; cancelled: boolean } }
+  | { type: 'usage'; data: { provider: 'groq' | 'simulated'; model: string; status: 'known' | 'unknown'; inputTokens: number | null;
     outputTokens: number | null; reservedTokens: number; chargedTokens: number; budgetAvailable: number } }
   | { type: 'metrics'; data: { redactions: number; suppressions: number; outputBytes: number } };
 

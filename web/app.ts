@@ -4,6 +4,9 @@ function element<T extends HTMLElement>(id: string): T {
   if (!value) throw new Error(`Missing element ${id}`);
   return value as T;
 }
+const scenario = element<HTMLSelectElement>('simulation-scenario');
+const recover = element<HTMLButtonElement>('recover');
+let observedScenario: string | undefined;
 const mode = element<HTMLSelectElement>('generation-mode');
 const customer = element<HTMLSelectElement>('customer');
 const issue = element<HTMLTextAreaElement>('issue');
@@ -27,7 +30,9 @@ function message(text: string, kind = '') { notice.textContent = text; notice.cl
 function count() { element('issue-count').textContent = `${issue.value.length.toLocaleString('en-US')} / 1,200`; }
 function setBusy(value: boolean) {
   busy = value;
-  mode.disabled = customer.disabled = issue.disabled = cases.disabled = sampleEmail.disabled = value || !catalog;
+  scenario.disabled = mode.disabled = customer.disabled = issue.disabled = cases.disabled = sampleEmail.disabled = value || !catalog;
+  sampleEmail.disabled ||= mode.value === 'simulation';
+  recover.disabled = value;
   generate.disabled = value || !catalog; generate.hidden = value;
   stop.hidden = !value; draft.readOnly = value;
   copy.disabled = value || !draft.value.trim();
@@ -40,6 +45,8 @@ function activity(text: string, detail = '', failed = false) {
   events.append(item);
 }
 function clearOutput() {
+  observedScenario = undefined; recover.hidden = true;
+  element('simulation-evidence').textContent = 'Run a scenario to observe how the request is handled.';
   draft.value = ''; draft.hidden = true; element('empty-state').hidden = false;
   events.replaceChildren(); const waiting = document.createElement('li'); waiting.className = 'waiting'; waiting.textContent = 'Waiting for your first draft'; events.append(waiting);
   element('verified-name').textContent = 'No lookup yet'; element('verified-plan').textContent = 'Generate a draft to retrieve the profile.';
@@ -50,6 +57,22 @@ function clearOutput() {
 }
 function updateMode() {
   const live = mode.value === 'live';
+  const simulation = mode.value === 'simulation';
+  element('simulation-controls').hidden = !simulation;
+  element('simulation-result').hidden = !simulation;
+  element('empty-state').hidden = simulation;
+  element('budget-label').textContent = simulation ? 'Simulation budget remaining' : 'Local budget remaining';
+  generate.textContent = simulation ? 'Run simulation' : 'Generate draft ↗';
+  if (simulation) {
+    element('mode-badge').textContent = 'Failure simulation';
+    element('data-note').textContent = 'Simulated failure. No cloud AI.';
+    element('mode-note').textContent = 'Test how failures are handled using local fixtures and a separate temporary token budget. No Groq requests are sent.';
+    element('generation-note').textContent = 'Runs a real customer lookup, then exercises the selected failure. No reply is generated.';
+    element('provider-label').textContent = 'Simulated provider';
+    element('provider-note').textContent = 'The timeout uses a shortened 1.5-second deadline. Simulation allowances are not real model usage. Each run starts fresh.';
+    element('model-tokens').textContent = 'Not measured (simulation)';
+    return;
+  }
   element('mode-badge').textContent = live ? 'Live AI · Groq' : 'Scripted demo';
   element('data-note').textContent = live ? 'Fictional data. Cloud AI.' : 'Fictional data. No live AI.';
   element('mode-note').textContent = live
@@ -103,7 +126,8 @@ async function consume(response: Response, signal: AbortSignal, current: number)
     const data = JSON.parse(raw) as Record<string, unknown>;
     if (type === 'status') {
       if (data.step === 'lookup') { activity('Looking up customer', 'Authenticated MCP gateway'); message('Retrieving the selected customer through MCP…'); }
-      if (data.step === 'generating') { activity(mode.value === 'live' ? 'Generating with Groq' : 'Generating scripted draft', 'Email guardrail active'); message(mode.value === 'live' ? 'Streaming a live AI reply from Groq…' : 'Streaming a deterministic template. No live model is connected.'); }
+      if (data.step === 'generating' && mode.value === 'simulation') { activity('Running local failure fixture', 'No external model call'); message('Simulation running. The selected failure is intentional.'); }
+      else if (data.step === 'generating') { activity(mode.value === 'live' ? 'Generating with Groq' : 'Generating scripted draft', 'Email guardrail active'); message(mode.value === 'live' ? 'Streaming a live AI reply from Groq…' : 'Streaming a deterministic template. No live model is connected.'); }
     } else if (type === 'customer') {
       element('verified-name').textContent = String(data.name);
       element('verified-plan').textContent = `${String(data.plan)} plan · ${String(data.customer_id)}`;
@@ -111,6 +135,19 @@ async function consume(response: Response, signal: AbortSignal, current: number)
     } else if (type === 'delta') {
       if (typeof data.text !== 'string' || draft.value.length + data.text.length > 100_000) throw new Error('INVALID_STREAM');
       draft.hidden = false; element('empty-state').hidden = true; draft.value += data.text; draft.scrollTop = draft.scrollHeight;
+    } else if (type === 'simulation') {
+      if (data.phase === 'started') {
+        activity('Simulation started', `${String(data.scenario)} · isolated temporary budget`);
+      } else if (data.phase === 'finished') {
+        observedScenario = String(data.scenario);
+        element('simulation-evidence').textContent = `${String(data.providerCalls)} local simulated provider attempt(s). ${String(data.budgetUsed)} tokens held in the simulation ledger. Cancellation observed: ${data.cancelled ? 'yes' : 'no'}. No Groq request was sent.`;
+        activity('Simulation evidence recorded', `${String(data.providerCalls)} simulated attempt(s); no automatic retry`);
+      }
+      element('budget-available').textContent = Number(data.budgetAvailable).toLocaleString('en-US');
+    } else if (type === 'usage' && data.provider === 'simulated') {
+      element('model-tokens').textContent = 'Not measured (simulation)';
+      element('budget-available').textContent = Number(data.budgetAvailable).toLocaleString('en-US');
+      activity('Simulation allowance retained', `${String(data.reservedTokens)} estimated tokens; no real model usage or charge`);
     } else if (type === 'usage') {
       element('model-tokens').textContent = data.status === 'known' ? `${String(data.inputTokens)} / ${String(data.outputTokens)}` : 'Unknown';
       element('budget-available').textContent = Number(data.budgetAvailable).toLocaleString('en-US');
@@ -149,7 +186,7 @@ element<HTMLFormElement>('draft-form').addEventListener('submit', event => {
   event.preventDefault(); if (busy || !catalog) return;
   if (issue.value.trim().length < 10) { message(errors.INVALID_REQUEST!, 'error'); issue.focus(); return; }
   const current = ++run; const control = new AbortController(); controller = control;
-  clearOutput(); setBusy(true); started = performance.now();
+  clearOutput(); updateMode(); setBusy(true); started = performance.now();
   element('draft-status').textContent = 'Generating'; message('Starting the local demo session…');
   const timer = setInterval(() => { if (current === run) element('elapsed').textContent = `${((performance.now() - started) / 1000).toFixed(1)}s`; }, 100);
   void (async () => {
@@ -157,7 +194,7 @@ element<HTMLFormElement>('draft-form').addEventListener('submit', event => {
       await session(control.signal);
       const response = await fetch('/copilot/draft', { method: 'POST', credentials: 'same-origin', signal: control.signal,
         headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
-        body: JSON.stringify({ mode: mode.value, customerId: customer.value, caseType, issue: issue.value, includeSampleEmail: sampleEmail.checked }),
+        body: JSON.stringify({ mode: mode.value, ...(mode.value === 'simulation' ? { scenario: scenario.value } : {}), customerId: customer.value, caseType, issue: issue.value, includeSampleEmail: sampleEmail.checked }),
       });
       if (!response.ok) {
         const body = await response.json() as { error?: { code?: string } };
@@ -173,6 +210,19 @@ element<HTMLFormElement>('draft-form').addEventListener('submit', event => {
         activity('Generation stopped', 'The active request was cancelled');
       } else {
         const code = error instanceof Error ? error.message : 'DRAFT_FAILED';
+        const expected: Record<string, string> = { 'rate-limit': 'PROVIDER_RATE_LIMIT', timeout: 'STREAM_TIMEOUT', 'budget-exhausted': 'BUDGET_EXHAUSTED' };
+        if (mode.value === 'simulation' && observedScenario === scenario.value && expected[scenario.value] === code) {
+          const explanations: Record<string, string> = {
+            'rate-limit': 'Simulated 429 handled. No retry or fallback was started; the unknown allowance was retained in the temporary ledger.',
+            timeout: 'Simulated timeout handled. The pending operation was cancelled and its unknown allowance retained.',
+            'budget-exhausted': 'Simulated budget rejection handled. Admission stopped the request before any provider attempt.',
+          };
+          message(explanations[scenario.value]!, 'success');
+          element('draft-status').textContent = 'Scenario demonstrated';
+          element('review-note').textContent = 'Intentional simulated failure. No draft was generated.';
+          activity('Expected failure handled', code); recover.hidden = false;
+          return;
+        }
         message(errors[code] ?? 'The draft could not complete. Check the connection and try again.', 'error');
         element('draft-status').textContent = 'Could not complete';
         element('review-note').textContent = draft.value ? 'Incomplete draft. Review before use.' : 'No complete draft was generated.';
@@ -187,10 +237,12 @@ element<HTMLFormElement>('draft-form').addEventListener('submit', event => {
 stop.addEventListener('click', () => controller?.abort());
 reset.addEventListener('click', () => {
   ++run; controller?.abort(); controller = undefined;
-  clearOutput(); mode.value = 'scripted'; updateMode(); customer.selectedIndex = 0; sampleEmail.checked = true; selectCase('account'); setBusy(false);
+  clearOutput(); mode.value = 'scripted'; scenario.value = 'rate-limit'; updateMode(); customer.selectedIndex = 0; sampleEmail.checked = true; selectCase('account'); setBusy(false);
   message('Demo reset. Choose a customer and generate a new draft.'); issue.focus();
 });
 mode.addEventListener('change', () => { ++run; clearOutput(); updateMode(); setBusy(false); message('Mode selected. Generate a new draft.'); });
+scenario.addEventListener('change', () => { ++run; clearOutput(); updateMode(); setBusy(false); message('Simulation selected. Run it to inspect the result.'); });
+recover.addEventListener('click', () => { ++run; clearOutput(); mode.value = 'scripted'; updateMode(); setBusy(false); message('Scripted recovery selected. Generate a new draft to demonstrate recovery.'); });
 issue.addEventListener('input', count);
 draft.addEventListener('input', () => { copy.disabled = busy || !draft.value.trim(); if (!busy) element('draft-status').textContent = 'Edited by you'; copy.textContent = 'Copy draft'; });
 copy.addEventListener('click', () => {

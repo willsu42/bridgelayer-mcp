@@ -5,6 +5,7 @@ import { lookupCustomer } from './customer-client.js';
 import { scriptedDraft } from './scripted.js';
 import { CopilotError, type CustomerSummary, type DraftEvent, type DraftRequest } from './contracts.js';
 import { liveDraft, type LiveGeneration } from './generation.js';
+import { simulatedDraft } from './simulation.js';
 
 export type DraftSource = (customer: CustomerSummary, request: DraftRequest) => Provider;
 
@@ -18,7 +19,9 @@ export async function* draftWorkflow(request: DraftRequest, context: {
   yield { type: 'customer', data: customer };
   yield { type: 'status', data: { step: 'generating' } };
   const stats = metrics();
-  if (request.mode === 'live') {
+  if (request.mode === 'simulation') {
+    yield* simulatedDraft(customer, request, { signal: context.signal, stats });
+  } else if (request.mode === 'live') {
     yield* liveDraft(customer, request, { ...context.live!, signal: context.signal, stats });
   } else {
     const source = (context.source ?? scriptedDraft)(customer, request);

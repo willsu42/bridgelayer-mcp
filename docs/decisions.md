@@ -103,3 +103,14 @@ Keep Scripted as the default and expose Live only when the server has a key. Fre
 Reuse the Task 4 SQLite ledger with a distinct persistent file and an 8,000-token/sixty-second policy for the fixed authenticated demo tenant. Reserve UTF-8 message content bytes plus a 256-token chat-template margin and a 1,024-token output allowance before provider I/O. This conservative estimate is not a tokenizer result or a guaranteed provider quota bound. Settle terminal validated usage; unknown, interrupted, or malformed usage retains the full reservation. Over-reports are charged before failing closed. A successful response cannot precede settlement. Original fixture routers retain their existing three-second read timeout; live drafting allows ten seconds per read within the existing thirty-second total deadline.
 
 The model receives verified customer name/plan and the question as data. Customer-record email is excluded. Output email filtering does not mask the input sent to Groq. The model has no tools and cannot send messages, approve refunds, or modify records; factual reliability still requires human review and a real-model evaluation. [Stage B documentation](COPILOT_STAGE_B.md) records setup, evidence, and outstanding live verification.
+
+
+## Support Copilot Stage C — November 13, 2026
+
+The user requested Stage C before completing broader Stage B answer-quality acceptance. Add a distinct `simulation` mode with a required allowlisted scenario: `rate-limit`, `timeout`, or `budget-exhausted`. Reject scenario fields on Scripted/Live requests so fault injection cannot silently affect real generation. Continue the authenticated, fixed customer lookup before the simulation begins.
+
+Use a fresh in-memory `TokenBudget` per simulation and inject a local provider into the existing generation runner. The 429 fixture fails after 500 ms; the timeout fixture stalls until the real read deadline aborts it after 1.5 seconds; a one-token ledger fails reservation before a provider attempt. The simulator accepts no real provider, key, URL, or persistent ledger. It closes its temporary ledger on completion, cancellation, or consumer return. Live timeouts and persistent budgets retain their Stage B settings.
+
+Mark simulated usage explicitly and report observed attempt counts, held allowances, and cancellation. These are local fixture observations, not real Groq errors, measured model tokens, or proof of live failover. Expected scenarios terminate with the actual error code and no draft `done` event. The UI recognizes an expected demonstration only after the matching finished observation and error; unexpected failures stay errors. Recovery is an explicit switch to Scripted followed by a new generation, with no hidden retry or fallback.
+
+The [walkthrough](COPILOT_STAGE_C.md) includes the presentation script and local validation. The current scope remains local-only; no publication or public authentication is introduced.
